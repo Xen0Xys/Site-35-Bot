@@ -1,0 +1,71 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../prisma/generated"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Units {
+  XI_8
+  ALPHA_1
+
+  @@map("units")
+}
+
+enum Ranks {
+  CMD
+  MJR
+  CPT
+  LTN
+  S_LTN
+  ADJ_C
+  ADJ
+  SGT_C
+  SGT
+  CPL_C
+  CPL
+  SDT_1C
+  SDT_2C
+  SDT_3C
+  SDT
+  CDT
+
+  @@map("ranks")
+}
+
+enum Trainings {
+  FIM
+  CQC
+  FIRST_AID
+  BREACHER
+  GRENADE_LAUNCHER
+  FLAMETHROWER
+  ANTI_TANK
+  ARTIFICIER
+  SNIPER
+  MACHINE_GUNNER
+  MEDIC
+
+  @@map("trainings")
+}
+
+model Users {
+  id             BigInt          @id
+  rank           Ranks
+  name           String
+  unit           Units?
+  user_trainings UserTrainings[]
+
+  @@map("users")
+}
+
+model UserTrainings {
+  user_id  BigInt
+  training Trainings
+  user     Users     @relation(fields: [user_id], references: [id])
+
+  @@id([user_id, training])
+  @@map("user_trainings")
+}

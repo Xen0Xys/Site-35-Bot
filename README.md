@@ -1,0 +1,95 @@
+# Documentation (FR)
+
+Ce projet est un bot Discord pour le serveur "Site 35". Il gère les profils du personnel, les grades et les formations via des commandes slash.
+
+## A quoi sert le bot ?
+
+Le bot maintient une base de données des membres du serveur (nom, grade, unité et formations) et publie les changements dans des salons dédiés.
+
+## Prérequis
+
+- Un compte Discord
+- Être administrateur (ou avoir les permissions) sur le serveur où vous voulez ajouter le bot
+
+## Inviter le bot sur votre serveur
+
+1. Ouvrez ce lien dans votre navigateur :
+   https://discord.com/oauth2/authorize?client_id=[CLIENT_ID]&permissions=2281769024&integration_type=0&scope=bot
+2. Choisissez votre serveur dans la liste.
+3. Vérifiez les permissions demandées.
+4. Cliquez sur "Autoriser".
+
+Si tout s'est bien passé, le bot apparaît dans la liste des membres du serveur.
+
+## Commandes disponibles
+
+Toutes les commandes sont des slash commands (tapez `/` dans Discord).
+
+### `/profile`
+
+Affiche la fiche d'un membre avec ses informations enregistrées.
+
+- Option : `joueur` (facultatif). Si vous ne mettez rien, le bot affiche votre propre fiche.
+- Réponse : un message privé (visible seulement par vous) avec un embed "Dossier du personnel".
+
+### `/add-training`
+
+Ajoute une formation au profil d'un membre.
+
+- Options :
+    - `joueur` (obligatoire)
+    - `formation` (obligatoire, liste avec auto-complétion)
+- Effet :
+    - Ajoute la formation dans la base de données.
+    - Publie un message dans le salon des formations.
+    - Réponse privée de confirmation.
+
+### `/remove-training`
+
+Retire une formation du profil d'un membre.
+
+- Options :
+    - `joueur` (obligatoire)
+    - `formation` (obligatoire, liste avec auto-complétion)
+- Effet :
+    - Supprime la formation dans la base de données.
+    - Réponse privée de confirmation.
+
+### `/set-rank`
+
+Enregistre une promotion ou une démotion dans le registre.
+
+- Options :
+    - `joueur` (obligatoire)
+    - `grade` (obligatoire, liste avec auto-complétion)
+    - `raison` (obligatoire)
+- Effet :
+    - Met à jour le grade et le nom du membre dans la base de données.
+    - Publie un message dans le salon des promotions/démotions.
+    - Met à jour le pseudo du membre avec le nouveau grade.
+    - Réponse privée de confirmation.
+
+## Règles importantes (basées sur le code)
+
+- Le bot utilise les salons configurés pour les formations et les promotions/démotions.
+- Pour `/add-training` et `/remove-training`, vous devez pouvoir écrire dans le salon des formations.
+- Pour `/set-rank`, vous devez pouvoir écrire dans le salon des promotions/démotions.
+- Le bot attend un format de pseudo précis : `[Grade] F. Nom`.
+    - Exemple : `[CPT] J. Dupont`
+    - Si le format n'est pas respecté, la commande `/set-rank` échoue.
+
+## Ce que le bot fait automatiquement
+
+- Au démarrage, il synchronise tous les membres du serveur.
+- Il lit les derniers messages du salon des formations et enregistre les formations détectées.
+- Quand un message est posté dans le salon des formations, il tente d'enregistrer la formation.
+- Quand un message est posté dans le salon des promotions/démotions, il tente de mettre à jour le grade.
+- Quand un membre change de pseudo ou reçoit/perd certains rôles (Ξ-8, α-1), il synchronise son profil.
+
+## Problèmes courants
+
+- "Failed to retrieve guild information" : l'ID du serveur n'est pas configuré.
+- "Training channel not found" ou "Rank channel not found" : les salons ne sont pas configurés.
+- Le pseudo ne se met pas à jour : le bot n'a pas la permission de modifier les pseudos.
+
+Si le problème persiste, contactez l'équipe qui gère le bot.
