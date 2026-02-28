@@ -1,6 +1,6 @@
 import {Injectable, Logger} from "@nestjs/common";
 import * as necord from "necord";
-import {Client} from "discord.js";
+import {Client, CommandInteractionOption} from "discord.js";
 import {DiscordService} from "../services/discord.service";
 import {UserService} from "../services/user.service";
 import {SimpleUserEntity} from "../models/entities/simple-user.entity";
@@ -76,6 +76,19 @@ export class BotListener {
     async onGuildMemberRoleRemove(@necord.Context() [member, role]: necord.ContextOf<"guildMemberRoleRemove">) {
         if (![this.xi8RoleId, this.alpha1RoleId].includes(role.id)) return;
         await this.syncMember(member, "Guild member role removed");
+    }
+
+    @necord.On("interactionCreate")
+    onInteraction(@necord.Context() [interaction]: necord.ContextOf<"interactionCreate">) {
+        if (!interaction.isChatInputCommand()) return;
+        const username = interaction.user ? interaction.user.username : "Unknown user";
+        const guildName = interaction.guild ? interaction.guild.name : "DM";
+        const channelName = interaction.channel && "name" in interaction.channel ? interaction.channel.name : "DM";
+        this.logger.log(
+            `SLASH_COMMAND ${interaction.commandName} ` +
+                `[${guildName}] [${username}] [${channelName}] ` +
+                `${JSON.stringify(interaction.options.data.map((o: CommandInteractionOption): any => ({name: o.name, value: o.value})))}`,
+        );
     }
 
     private getMemberUnit(member: necord.ContextOf<"guildMemberNicknameUpdate">[0]) {

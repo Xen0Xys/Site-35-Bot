@@ -25,7 +25,9 @@ export class PrismaService extends PrismaClient implements OnModuleInit {
                     const duration: number = Date.now() - startTime;
                     const requestCount: number = args.length || 1;
                     const resultCount: number = !result ? 0 : result.length || 1;
-                    PrismaService.logger.log(`${model} ${operation} ${duration}ms ${requestCount} ${resultCount}`);
+                    PrismaService.logger.log(
+                        `PRISMA ${model} ${operation} ${duration}ms ${requestCount} ${resultCount}`,
+                    );
                     return result;
                 },
             },
