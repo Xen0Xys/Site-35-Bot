@@ -9,6 +9,9 @@ import {RankCommand} from "./commands/rank.command";
 import {UserService} from "./services/user.service";
 import {Module} from "@nestjs/common";
 import {RankService} from "./services/rank.service";
+import {StatusService} from "./services/status.service";
+import {StatusCron} from "./crons/status.cron";
+import {StatusCommands} from "./commands/status.commands";
 
 @Module({
     providers: [
@@ -17,14 +20,18 @@ import {RankService} from "./services/rank.service";
         CommandService,
         DiscordService,
         RankService,
+        StatusService,
         TrainingService,
         UserService,
         // Commands
         ProfileCommand,
         RankCommand,
+        StatusCommands,
         TrainingCommands,
         // Listeners
         BotListener,
+        // Cron
+        StatusCron,
     ],
 })
 export class BotModule {}

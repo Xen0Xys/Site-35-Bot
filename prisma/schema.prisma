@@ -51,6 +51,12 @@ enum Trainings {
   @@map("trainings")
 }
 
+enum MessageTypes {
+  STATUS
+
+  @@map("message_types")
+}
+
 model Users {
   id             BigInt          @id
   rank           Ranks
@@ -68,4 +74,13 @@ model UserTrainings {
 
   @@id([user_id, training])
   @@map("user_trainings")
+}
+
+model TrackedMessages {
+  message_id BigInt
+  channel_id BigInt
+  type       MessageTypes
+
+  @@id([message_id, channel_id])
+  @@map("tracked_messages")
 }
