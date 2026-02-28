@@ -3,7 +3,6 @@ export class ServerDataEntity {
     players: number;
     maxPlayers: number;
     status: string;
-    modCount: number;
     map: string;
 
     constructor(partial: Partial<ServerDataEntity>) {

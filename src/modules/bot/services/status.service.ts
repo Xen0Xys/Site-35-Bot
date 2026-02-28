@@ -4,6 +4,8 @@ import {PrismaService} from "../../helper/prisma.service";
 import {ServerDataEntity} from "../models/entities/server-data.entity";
 import {BotEmbedsService} from "./bot-embeds.service";
 import {MessageTypes} from "../../../../prisma/generated/enums";
+import {ConfigService} from "@nestjs/config";
+import {GameDig, QueryResult} from "gamedig";
 
 @Injectable()
 export class StatusService {
@@ -13,24 +15,40 @@ export class StatusService {
         private readonly client: Client,
         private readonly prismaService: PrismaService,
         private readonly botEmbedsService: BotEmbedsService,
+        private readonly configService: ConfigService,
     ) {}
 
     async fetchServerData(): Promise<ServerDataEntity | null> {
-        const res = await fetch(
-            "https://api.battlemetrics.com/servers?filter[game]=reforger&filter[search]=%5BFR%5D%20Site%2035",
-        );
-        if (!res.ok) return null;
-        const data = await res.json();
-        if (!data || !data.data || data.data.length === 0) return null;
-        const server = data.data[0];
-        return new ServerDataEntity({
-            name: server.attributes.name,
-            players: server.attributes.players,
-            maxPlayers: server.attributes.maxPlayers,
-            status: server.attributes.status,
-            modCount: server.attributes.details.reforger.mods.length,
-            map: server.attributes.details.reforger.scenarioName,
-        });
+        const serverIp = this.configService.get<string>("GAME_SERVER_IP");
+        const serverQueryPort = this.configService.get<number>("GAME_SERVER_QUERY_PORT");
+        if (!serverIp || !serverQueryPort) {
+            this.logger.error("Game server IP or query port not configured.");
+            return null;
+        }
+        try {
+            const state: QueryResult = await GameDig.query({
+                type: "armareforger",
+                host: "23.109.63.157",
+                port: 3143,
+                socketTimeout: 2000,
+            });
+            return new ServerDataEntity({
+                name: state.name || "Unknown",
+                players: state.players.length,
+                maxPlayers: state.maxplayers,
+                map: state.map || "Unknown",
+                status: "online",
+            });
+        } catch {
+            this.logger.error("Failed to query game server.");
+            return new ServerDataEntity({
+                name: "Unknown",
+                players: 0,
+                maxPlayers: 0,
+                map: "Unknown",
+                status: "offline",
+            });
+        }
     }
 
     async updateBotActivity(): Promise<void> {

@@ -109,11 +109,6 @@ export class BotEmbedsService {
                     inline: true,
                 },
                 {
-                    name: "Mods actifs",
-                    value: `${serverData.modCount}`,
-                    inline: true,
-                },
-                {
                     name: "Secure. Contain. Protect.",
                     value: "",
                 },
