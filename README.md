@@ -30,7 +30,7 @@ Toutes les commandes sont des slash commands (tapez `/` dans Discord).
 Affiche la fiche d'un membre avec ses informations enregistrées.
 
 - Option : `joueur` (facultatif). Si vous ne mettez rien, le bot affiche votre propre fiche.
-- Réponse : un message privé (visible seulement par vous) avec un embed "Dossier du personnel".
+- Réponse : message privé (visible seulement par vous) avec un embed "Dossier du personnel".
 
 ### `/add-training`
 
@@ -69,22 +69,39 @@ Enregistre une promotion ou une démotion dans le registre.
     - Met à jour le pseudo du membre avec le nouveau grade.
     - Réponse privée de confirmation.
 
+### `/status`
+
+Renvoie le statut actuel du serveur.
+
+- Effet :
+  - Réponse privée avec un embed "Statut du serveur".
+
+### `/display-status`
+
+Affiche le statut du serveur dans le salon actuel.
+
+- Effet :
+  - Publie un message dans le salon avec un embed "Statut du serveur".
+  - Réponse privée de confirmation.
+
 ## Règles importantes (basées sur le code)
 
 - Le bot utilise les salons configurés pour les formations et les promotions/démotions.
 - Pour `/add-training` et `/remove-training`, vous devez pouvoir écrire dans le salon des formations.
 - Pour `/set-rank`, vous devez pouvoir écrire dans le salon des promotions/démotions.
+- Pour `display-status`, vous devez pouvoir gérer les messages dans le salon actuel.
 - Le bot attend un format de pseudo précis : `[Grade] F. Nom`.
     - Exemple : `[CPT] J. Dupont`
     - Si le format n'est pas respecté, la commande `/set-rank` échoue.
 
 ## Ce que le bot fait automatiquement
 
-- Au démarrage, il synchronise tous les membres du serveur.
+- Au démarrage, il synchronise tous les membres du serveur, et il met à jour son activité et les messages de statut.
 - Il lit les derniers messages du salon des formations et enregistre les formations détectées.
 - Quand un message est posté dans le salon des formations, il tente d'enregistrer la formation.
 - Quand un message est posté dans le salon des promotions/démotions, il tente de mettre à jour le grade.
 - Quand un membre change de pseudo ou reçoit/perd certains rôles (Ξ-8, α-1), il synchronise son profil.
+- À intervalles réguliers (toutes les minutes), il actualise l'activité du bot et les messages de statut.
 
 ## Problèmes courants
 

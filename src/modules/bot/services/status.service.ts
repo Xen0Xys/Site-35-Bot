@@ -52,19 +52,10 @@ export class StatusService {
     }
 
     async trackStatusMessage(channelId: bigint, messageId: bigint): Promise<void> {
-        await this.prismaService.trackedMessages.upsert({
-            where: {
-                message_id_channel_id: {
-                    message_id: messageId,
-                    channel_id: channelId,
-                },
-            },
-            update: {
-                type: MessageTypes.STATUS,
-            },
-            create: {
-                message_id: messageId,
+        await this.prismaService.trackedMessages.create({
+            data: {
                 channel_id: channelId,
+                message_id: messageId,
                 type: MessageTypes.STATUS,
             },
         });

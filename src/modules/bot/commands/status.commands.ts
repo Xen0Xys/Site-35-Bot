@@ -3,7 +3,7 @@ import {CommandService} from "../services/command.service";
 import {StatusService} from "../services/status.service";
 import {Injectable} from "@nestjs/common";
 import * as necord from "necord";
-import {GuildTextBasedChannel, Message, MessageFlagsBitField} from "discord.js";
+import {GuildTextBasedChannel, Message, MessageFlagsBitField, PermissionsBitField} from "discord.js";
 
 @Injectable()
 export class StatusCommands {
@@ -50,6 +50,13 @@ export class StatusCommands {
         const embed = this.botEmbedsService.getStatusEmbed(serverData);
         if (!interaction.inCachedGuild()) {
             await this.commandService.replyEphemeral(interaction, "Cette commande doit être utilisée dans un serveur.");
+            return;
+        }
+        if (!interaction.member.permissions.has(PermissionsBitField.Flags.ManageMessages)) {
+            await this.commandService.replyEphemeral(
+                interaction,
+                "Vous devez avoir la permission de gerer les messages pour utiliser cette commande.",
+            );
             return;
         }
         const channel = await interaction.guild.channels.fetch(interaction.channelId);
