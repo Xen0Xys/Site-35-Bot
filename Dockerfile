@@ -31,6 +31,7 @@ ARG DATABASE_URL
 ENV DATABASE_URL=${DATABASE_URL}
 COPY package.json ./
 COPY prisma.config.ts ./
+COPY assets ./assets
 COPY --from=deps /usr/src/app/prisma ./prisma
 COPY --from=deps /usr/src/app/node_modules ./node_modules
 COPY --from=builder /usr/src/app/dist ./dist

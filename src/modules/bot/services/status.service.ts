@@ -60,7 +60,7 @@ export class StatusService {
         this.client.user?.setPresence({
             activities: [
                 {
-                    name: `Surveillance ${serverData.players}/${serverData.maxPlayers} personnels`,
+                    name: `Surveillance ${serverData.players}/${serverData.maxPlayers} opérateurs`,
                     state: "Flux operationnel ███ - Dev: Xen0Xys",
                     type: ActivityType.Playing,
                 },

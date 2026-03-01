@@ -80,7 +80,7 @@ export class DiscordService {
     async getRankChannel(): Promise<GuildTextBasedChannel | null> {
         const guild = await this.getGuild();
         if (!guild) return null;
-        const rankChannelId = process.env.DISCORD_RANK_CHANNEL_ID;
+        const rankChannelId = process.env.DISCORD_PROMO_DEMO_CHANNEL_ID;
         if (!rankChannelId) {
             this.logger.error("DISCORD_RANK_CHANNEL_ID is not defined.");
             return null;
