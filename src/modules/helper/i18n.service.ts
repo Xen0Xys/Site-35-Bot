@@ -76,6 +76,8 @@ export class I18nService {
                 return "Fusilier Mitrailleur";
             case Trainings.MEDIC:
                 return "Médecin";
+            case Trainings.DRONE:
+                return "Drone";
             default:
                 return training;
         }

@@ -47,6 +47,7 @@ enum Trainings {
   SNIPER
   MACHINE_GUNNER
   MEDIC
+  DRONE
 
   @@map("trainings")
 }

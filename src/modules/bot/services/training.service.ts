@@ -55,6 +55,7 @@ export class TrainingService {
             "fusille mitrailleur": Trainings.MACHINE_GUNNER,
             medic: Trainings.MEDIC,
             medecin: Trainings.MEDIC,
+            drone: Trainings.DRONE,
         };
 
         const normalizedLabelToTraining = new Map<string, Trainings>();
