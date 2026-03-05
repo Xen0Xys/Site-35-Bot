@@ -1,8 +1,9 @@
-import {Injectable, Logger} from "@nestjs/common";
+import {Injectable, Logger, NotFoundException} from "@nestjs/common";
 import {Ranks} from "../../../../prisma/generated/enums";
 import {I18nService} from "../../helper/i18n.service";
 import {PrismaService} from "../../helper/prisma.service";
 import {DiscordService} from "./discord.service";
+import {ConfigService} from "@nestjs/config";
 
 @Injectable()
 export class RankService {
@@ -12,14 +13,36 @@ export class RankService {
         private readonly prismaService: PrismaService,
         private readonly i18nService: I18nService,
         private readonly discordService: DiscordService,
+        private readonly configService: ConfigService,
     ) {}
 
-    private formatShortRank(rank: Ranks): string {
+    async registerPromoDemoFromMessage(content: string) {
+        const sanitizedRanks = this.sanitizeMessages([content]);
+        await this.updateUserRanks(sanitizedRanks);
+    }
+
+    formatShortRank(rank: Ranks): string {
         const formattedShortRank = rank.toUpperCase().replace("_", " ");
         return formattedShortRank.includes(" ") ? `${formattedShortRank}.` : formattedShortRank;
     }
 
+    toRankFromLabel(label: string): Ranks | null {
+        const normalizedLabel = label.toUpperCase().replace(/\s+/g, " ").trim();
+        const rankMap = this.i18nService.getRankMap();
+        const rank = (Object.keys(rankMap) as Ranks[]).find((r) => rankMap[r].toUpperCase() === normalizedLabel);
+        if (!rank) {
+            this.logger.warn(`Unknown rank label: "${label}" (normalized: "${normalizedLabel}").`);
+            return null;
+        }
+        return rank;
+    }
+
+    async updateUserRank(userId: bigint, rank: Ranks, updateNickname = true) {
+        await this.updateUserRanks([{userId, rank}], true, updateNickname);
+    }
+
     private sanitizeMessages(messages: string[]) {
+        // Normalize text for tolerant matching across accents, punctuation, and casing.
         const normalize = (value: string) =>
             value
                 .normalize("NFD")
@@ -55,40 +78,52 @@ export class RankService {
 
         messages.forEach((message) => {
             const cleanedMessage = message.replace(/\r/g, "");
-            const preview = sanitizePreview(cleanedMessage);
-            const rankMatch = cleanedMessage.match(/Grade actuel\s*:\s*(.+)$/im);
-            if (!rankMatch) return;
+            // Support optional header lines and parse each logical block separately.
+            const headerRegex = /site\s*35\s*[|\-–—]*\s*registre\s*des\s*promotions\s*\/?\s*demotions?/i;
+            const blocks = cleanedMessage
+                .split(headerRegex)
+                .map((block) => block.trim())
+                .filter((block) => block.length > 0);
+            const targetBlocks = blocks.length > 0 ? blocks : [cleanedMessage];
 
-            const rankRaw = rankMatch[1].trim();
-            if (!rankRaw) return;
+            targetBlocks.forEach((block) => {
+                const preview = sanitizePreview(block);
+                // The rank is typically the last "Grade actuel" line in the block.
+                const rankMatches = Array.from(block.matchAll(/Grade actuel\s*:\s*(.+)$/gim));
+                const rankMatch = rankMatches.length > 0 ? rankMatches[rankMatches.length - 1] : null;
+                if (!rankMatch) return;
 
-            const normalizedRank = normalize(rankRaw);
-            const rank =
-                normalizedLabelToRank.get(normalizedRank) ?? normalizedLabelToRank.get(normalizeNoSpace(rankRaw));
-            if (!rank) {
-                this.logger.warn(
-                    `Unknown rank "${rankRaw}" (normalized: "${normalizedRank}"), skipping. Preview: "${preview}"`,
-                );
-                return;
-            }
+                const rankRaw = rankMatch[1].trim();
+                if (!rankRaw) return;
 
-            const mentionMatch = cleanedMessage.match(/<@!?(\d{17,})>/);
-            const idMatch = mentionMatch ?? cleanedMessage.match(/\b(\d{17,})\b/);
-            if (!idMatch) return;
+                const normalizedRank = normalize(rankRaw);
+                const rank =
+                    normalizedLabelToRank.get(normalizedRank) ?? normalizedLabelToRank.get(normalizeNoSpace(rankRaw));
+                if (!rank) {
+                    this.logger.warn(
+                        `Unknown rank "${rankRaw}" (normalized: "${normalizedRank}"), skipping. Preview: "${preview}"`,
+                    );
+                    return;
+                }
 
-            const userId = BigInt(idMatch[1]);
-            sanitized.push({userId, rank});
+                // Extract member id from mention or raw numeric id.
+                const mentionMatch = block.match(/<@!?(\d{17,})>/);
+                const idMatch = mentionMatch ?? block.match(/\b(\d{17,})\b/);
+                if (!idMatch) return;
+
+                const userId = BigInt(idMatch[1]);
+                sanitized.push({userId, rank});
+            });
         });
 
         return sanitized;
     }
 
-    async registerPromoDemoFromMessage(content: string) {
-        const sanitizedRanks = this.sanitizeMessages([content]);
-        await this.registerSanitizedRanks(sanitizedRanks);
-    }
-
-    private async registerSanitizedRanks(sanitizedRanks: {userId: bigint; rank: Ranks}[]) {
+    private async updateUserRanks(
+        sanitizedRanks: {userId: bigint; rank: Ranks}[],
+        requireExistingUser: boolean = false,
+        updateNickname: boolean = true,
+    ) {
         if (sanitizedRanks.length === 0) {
             this.logger.log("No rank updates to register.");
             return;
@@ -104,7 +139,7 @@ export class RankService {
         const userIds = Array.from(new Set(entries.map((entry) => entry.userId)));
         const existingUsers = await this.prismaService.users.findMany({
             where: {id: {in: userIds}},
-            select: {id: true, name: true},
+            select: {id: true, name: true, rank: true},
         });
         const existingUserIds = new Set(existingUsers.map((user) => user.id.toString()));
         const existingUserNames = new Map(existingUsers.map((user) => [user.id.toString(), user.name]));
@@ -112,9 +147,18 @@ export class RankService {
         const updates = entries.filter((entry) => existingUserIds.has(entry.userId.toString()));
         const skipped = entries.filter((entry) => !existingUserIds.has(entry.userId.toString()));
 
-        skipped.forEach((entry) => {
-            this.logger.warn(`Skipping rank update for missing user ${entry.userId.toString()}: ${entry.rank}.`);
-        });
+        if (skipped.length > 0) {
+            if (requireExistingUser) {
+                const entry = skipped[0];
+                throw new NotFoundException(
+                    `User with id ${entry.userId.toString()} not found, cannot update rank ${entry.rank}.`,
+                );
+            }
+
+            skipped.forEach((entry) => {
+                this.logger.warn(`Skipping rank update for missing user ${entry.userId.toString()}: ${entry.rank}.`);
+            });
+        }
 
         if (updates.length === 0) {
             this.logger.log("No rank updates to register after filtering.");
@@ -133,13 +177,36 @@ export class RankService {
                 this.logger.warn(`Failed to parse nickname for ${userId}, keeping stored name.`);
             }
 
+            if (existingUsers.find((u) => u.id.toString() === userId)?.rank === Ranks.CDT) {
+                try {
+                    await Promise.all([
+                        this.discordService.removeRoleFromMember(entry.userId, this.discordService.siteSecurityRoleId),
+                        this.discordService.addRoleToMember(entry.userId, this.discordService.xi8RoleId),
+                    ]);
+                    this.logger.log(`Updated roles for CDT user ${userId} promoted to ${entry.rank}.`);
+                } catch {
+                    this.logger.warn(`Failed to update roles for CDT user ${userId} promoted to ${entry.rank}.`);
+                }
+            } else if (entry.rank === Ranks.CDT) {
+                try {
+                    await Promise.all([
+                        this.discordService.removeRoleFromMember(entry.userId, this.discordService.xi8RoleId),
+                        this.discordService.removeRoleFromMember(entry.userId, this.discordService.alpha1RoleId),
+                        this.discordService.addRoleToMember(entry.userId, this.discordService.siteSecurityRoleId),
+                    ]);
+                    this.logger.log(`Updated roles for new CDT user ${userId}.`);
+                } catch {
+                    this.logger.warn(`Failed to update roles for new CDT user ${userId}.`);
+                }
+            }
+
             await this.prismaService.users.update({
                 where: {id: entry.userId},
                 data: updatedName ? {rank: entry.rank, name: updatedName} : {rank: entry.rank},
             });
             this.logger.log(`Updated rank to ${entry.rank} for user ${userId}.`);
 
-            if (member && updatedName) {
+            if (updateNickname && member && updatedName) {
                 const formattedShortNewRank = this.formatShortRank(entry.rank);
                 const updatedNickname = `[${formattedShortNewRank}] ${updatedName}`;
                 try {

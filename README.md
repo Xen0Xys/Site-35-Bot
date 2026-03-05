@@ -41,6 +41,7 @@ Ajoute une formation au profil d'un membre.
     - `formation` (obligatoire, liste avec auto-complétion)
 - Effet :
     - Ajoute la formation dans la base de données.
+    - Ajoute le rôle de la formation au membre.
     - Publie un message dans le salon des formations.
     - Réponse privée de confirmation.
 
@@ -65,6 +66,8 @@ Enregistre une promotion ou une démotion dans le registre.
     - `raison` (obligatoire)
 - Effet :
     - Met à jour le grade et le nom du membre dans la base de données.
+    - Si le joueur était Cadet, son rôle est changé de "Sécurité du site" à "Xi-8".
+    - Si le joueur repasse Cadet, son rôle est changé de "Xi-8" à "Sécurité du site".
     - Publie un message dans le salon des promotions/démotions.
     - Met à jour le pseudo du membre avec le nouveau grade.
     - Réponse privée de confirmation.
