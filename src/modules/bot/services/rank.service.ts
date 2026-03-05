@@ -37,8 +37,8 @@ export class RankService {
         return rank;
     }
 
-    async updateUserRank(userId: bigint, rank: Ranks) {
-        await this.updateUserRanks([{userId, rank}], true);
+    async updateUserRank(userId: bigint, rank: Ranks, updateNickname = true) {
+        await this.updateUserRanks([{userId, rank}], true, updateNickname);
     }
 
     private sanitizeMessages(messages: string[]) {
@@ -122,6 +122,7 @@ export class RankService {
     private async updateUserRanks(
         sanitizedRanks: {userId: bigint; rank: Ranks}[],
         requireExistingUser: boolean = false,
+        updateNickname: boolean = true,
     ) {
         if (sanitizedRanks.length === 0) {
             this.logger.log("No rank updates to register.");
@@ -205,7 +206,7 @@ export class RankService {
             });
             this.logger.log(`Updated rank to ${entry.rank} for user ${userId}.`);
 
-            if (member && updatedName) {
+            if (updateNickname && member && updatedName) {
                 const formattedShortNewRank = this.formatShortRank(entry.rank);
                 const updatedNickname = `[${formattedShortNewRank}] ${updatedName}`;
                 try {

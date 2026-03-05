@@ -10,27 +10,27 @@ import {GameDig, QueryResult} from "gamedig";
 @Injectable()
 export class StatusService {
     private readonly logger: Logger = new Logger(StatusService.name);
+    private readonly serverIp: string;
+    private readonly serverQueryPort: number;
 
     constructor(
         private readonly client: Client,
         private readonly prismaService: PrismaService,
         private readonly botEmbedsService: BotEmbedsService,
         private readonly configService: ConfigService,
-    ) {}
+    ) {
+        this.serverIp = this.configService.get<string>("GAME_SERVER_IP") || "";
+        this.serverQueryPort = this.configService.get<number>("GAME_SERVER_QUERY_PORT") || 0;
+        if (!this.serverIp || !this.serverQueryPort)
+            throw new Error("GAME_SERVER_IP and GAME_SERVER_QUERY_PORT must be configured.");
+    }
 
     async fetchServerData(): Promise<ServerDataEntity | null> {
-        const serverIp = this.configService.get<string>("GAME_SERVER_IP");
-        const serverQueryPort = this.configService.get<number>("GAME_SERVER_QUERY_PORT");
-        if (!serverIp || !serverQueryPort) {
-            this.logger.error("Game server IP or query port not configured.");
-            return null;
-        }
         try {
-            // TODO: Use configured serverIp/serverQueryPort instead of hardcoded values below.
             const state: QueryResult = await GameDig.query({
                 type: "armareforger",
-                host: "23.109.63.157",
-                port: 3143,
+                host: this.serverIp,
+                port: this.serverQueryPort,
                 socketTimeout: 2000,
             });
             return new ServerDataEntity({

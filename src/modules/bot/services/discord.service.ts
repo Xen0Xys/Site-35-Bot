@@ -19,6 +19,10 @@ export class DiscordService {
         this.siteSecurityRoleId = this.configService.get<string>("DISCORD_SITE_SECURITY_ROLE_ID") || "";
         this.xi8RoleId = this.configService.get<string>("DISCORD_XI_8_ROLE_ID") || "";
         this.alpha1RoleId = this.configService.get<string>("DISCORD_ALPHA_1_ROLE_ID") || "";
+        if (!this.siteSecurityRoleId || !this.xi8RoleId || !this.alpha1RoleId)
+            throw new Error(
+                "DISCORD_SITE_SECURITY_ROLE_ID, DISCORD_XI_8_ROLE_ID, and DISCORD_ALPHA_1_ROLE_ID must be configured.",
+            );
     }
 
     async getGuild() {

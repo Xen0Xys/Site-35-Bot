@@ -44,10 +44,12 @@ export class UserService {
         const firstName = matches[2];
         const lastName = matches[3]?.trim();
         if (!rank || !firstName || !lastName) return null;
-        return {rank: this.toRank(rank), name: `${firstName}. ${lastName}`};
+        const formattedRank = this.toRank(rank);
+        if (!formattedRank) return null;
+        return {rank: formattedRank, name: `${firstName}. ${lastName}`};
     }
 
-    toRank(rank: string): Ranks {
+    toRank(rank: string): Ranks | null {
         const formattedRank = rank.toUpperCase().replace(".", "").replace(" ", "_");
         return Ranks[formattedRank as keyof typeof Ranks] || null;
     }
@@ -72,7 +74,7 @@ export class UserService {
         }
 
         // Register new users
-        newUsers.forEach((user) => this.registerUser(user));
+        await Promise.all(newUsers.map((user) => this.registerUser(user)));
     }
 
     async registerOrUpdateUser(user: SimpleUserEntity) {
