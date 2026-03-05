@@ -11,10 +11,21 @@ Le bot maintient une base de données des membres du serveur (nom, grade, unité
 - Un compte Discord
 - Être administrateur (ou avoir les permissions) sur le serveur où vous voulez ajouter le bot
 
+## Permissions nécessaires
+
+Le bot a besoin des permissions suivantes pour fonctionner correctement :
+
+- Manage Roles
+- Manage Nicknames
+- Send Messages
+- Read Message History
+- Add Reactions
+- Use Slash Commands
+
 ## Inviter le bot sur votre serveur
 
 1. Ouvrez ce lien dans votre navigateur :
-   https://discord.com/oauth2/authorize?client_id=[CLIENT_ID]&permissions=2281769024&integration_type=0&scope=bot
+   https://discord.com/oauth2/authorize?client_id=[CLIENT_ID]&permissions=2550204480&integration_type=0&scope=bot
 2. Choisissez votre serveur dans la liste.
 3. Vérifiez les permissions demandées.
 4. Cliquez sur "Autoriser".
@@ -77,15 +88,15 @@ Enregistre une promotion ou une démotion dans le registre.
 Renvoie le statut actuel du serveur.
 
 - Effet :
-  - Réponse privée avec un embed "Statut du serveur".
+    - Réponse privée avec un embed "Statut du serveur".
 
 ### `/display-status`
 
 Affiche le statut du serveur dans le salon actuel.
 
 - Effet :
-  - Publie un message dans le salon avec un embed "Statut du serveur".
-  - Réponse privée de confirmation.
+    - Publie un message dans le salon avec un embed "Statut du serveur".
+    - Réponse privée de confirmation.
 
 ## Règles importantes (basées sur le code)
 
