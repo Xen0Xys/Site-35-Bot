@@ -76,36 +76,57 @@ export class TrainingService {
 
         messages.forEach((message) => {
             const cleanedMessage = message.replace(/\r/g, "");
-            const preview = sanitizePreview(cleanedMessage);
-            const normalizedMessage = normalize(cleanedMessage);
-            const trainingMatch = normalizedMessage.match(/formation completee\s+(.+)$/i);
-            if (!trainingMatch) {
-                return;
-            }
+            const headerRegex = /site\s*35\s*[|\-–—]*\s*registre\s*d['’]?attribution\s*des\s*formations/i;
+            const blocks = cleanedMessage
+                .split(headerRegex)
+                .map((block) => block.trim())
+                .filter((block) => block.length > 0);
+            const targetBlocks = blocks.length > 0 ? blocks : [cleanedMessage];
 
-            const trainingRaw = trainingMatch[1].split("site 35")[0].trim();
-            if (!trainingRaw) return;
+            targetBlocks.forEach((block) => {
+                const preview = sanitizePreview(block);
+                const trainingLineMatches = Array.from(
+                    block.matchAll(/formation compl[eé]t[eé]e\s*[:-]?\s*(.+)/gi),
+                ).map((match) => match[1].trim());
 
-            const normalizedTraining = normalize(trainingRaw);
-            if (normalizedTraining.includes("instructeur")) return;
-            const training =
-                normalizedLabelToTraining.get(normalizedTraining) ??
-                normalizedLabelToTraining.get(normalizeNoSpace(trainingRaw));
-            if (!training) {
-                this.logger.warn(
-                    `Unknown training "${trainingRaw}" (normalized: "${normalizedTraining}"), skipping. Preview: "${preview}"`,
+                const normalizedBlock = normalize(block);
+                const fallbackMatches = Array.from(normalizedBlock.matchAll(/formation completee\s+(.+)/gi)).map(
+                    (match) => match[1].trim(),
                 );
-                return;
-            }
 
-            const mentionMatch = cleanedMessage.match(/<@!?(\d{17,})>/);
-            const idMatch = mentionMatch ?? cleanedMessage.match(/\b(\d{17,})\b/);
-            if (!idMatch) {
-                return;
-            }
+                const trainingCandidates = trainingLineMatches.length > 0 ? trainingLineMatches : fallbackMatches;
 
-            const userId = BigInt(idMatch[1]);
-            sanitized.push({userId, training});
+                if (trainingCandidates.length === 0) {
+                    return;
+                }
+
+                const mentionMatch = block.match(/<@!?(\d{17,})>/);
+                const idMatch = mentionMatch ?? block.match(/\b(\d{17,})\b/);
+                if (!idMatch) {
+                    return;
+                }
+
+                const userId = BigInt(idMatch[1]);
+
+                trainingCandidates.forEach((trainingCandidate) => {
+                    const trainingRaw = trainingCandidate.split("site 35")[0].trim();
+                    if (!trainingRaw) return;
+
+                    const normalizedTraining = normalize(trainingRaw);
+                    if (normalizedTraining.includes("instructeur")) return;
+                    const training =
+                        normalizedLabelToTraining.get(normalizedTraining) ??
+                        normalizedLabelToTraining.get(normalizeNoSpace(trainingRaw));
+                    if (!training) {
+                        this.logger.warn(
+                            `Unknown training "${trainingRaw}" (normalized: "${normalizedTraining}"), skipping. Preview: "${preview}"`,
+                        );
+                        return;
+                    }
+
+                    sanitized.push({userId, training});
+                });
+            });
         });
         return sanitized;
     }
@@ -113,17 +134,12 @@ export class TrainingService {
     async registerTrainings() {
         const trainingMessages = await this.discordService.getTrainingMessages();
         const sanitizedTrainings = this.sanitizeMessages(trainingMessages);
-        await this.registerSanitizedTrainings(sanitizedTrainings);
+        await this.addTrainings(sanitizedTrainings);
     }
 
     async registerTrainingsFromMessage(message: string) {
         const sanitizedTrainings = this.sanitizeMessages([message]);
-        await this.registerSanitizedTrainings(sanitizedTrainings);
-    }
-
-    toTraining(training: string): Trainings | null {
-        const formattedTraining = training.toUpperCase().replace(".", "").replace(" ", "_");
-        return Trainings[formattedTraining as keyof typeof Trainings] || null;
+        await this.addTrainings(sanitizedTrainings);
     }
 
     toTrainingFromLabel(label: string): Trainings | null {
@@ -140,18 +156,7 @@ export class TrainingService {
     }
 
     async addTraining(userId: bigint, training: Trainings) {
-        const user = await this.prismaService.users.findUnique({where: {id: userId}});
-        if (!user)
-            throw new NotFoundException(
-                `User with id ${userId.toString()} not found, cannot add training ${training}.`,
-            );
-        await this.prismaService.userTrainings.create({
-            data: {
-                user_id: userId,
-                training,
-            },
-        });
-        this.logger.log(`Added training ${training} for user ${userId.toString()}.`);
+        await this.addTrainings([{userId, training}], true);
     }
 
     async removeTraining(userId: bigint, training: Trainings) {
@@ -171,7 +176,10 @@ export class TrainingService {
         this.logger.log(`Removed training ${training} for user ${userId.toString()}.`);
     }
 
-    private async registerSanitizedTrainings(sanitizedTrainings: {userId: bigint; training: Trainings}[]) {
+    private async addTrainings(
+        sanitizedTrainings: {userId: bigint; training: Trainings}[],
+        requireExistingUser: boolean = false, // Throw error if true, otherwise just skip entries with missing users
+    ) {
         if (sanitizedTrainings.length === 0) {
             this.logger.log("No sanitized trainings to register.");
             return;
@@ -195,11 +203,18 @@ export class TrainingService {
             .filter((entry) => existingUserIds.has(entry.userId.toString()))
             .map((entry) => ({user_id: entry.userId, training: entry.training}));
 
-        entries
-            .filter((entry) => !existingUserIds.has(entry.userId.toString()))
-            .forEach((entry) => {
+        const missingEntries = entries.filter((entry) => !existingUserIds.has(entry.userId.toString()));
+        if (missingEntries.length > 0) {
+            if (requireExistingUser) {
+                const entry = missingEntries[0];
+                throw new NotFoundException(
+                    `User with id ${entry.userId.toString()} not found, cannot add training ${entry.training}.`,
+                );
+            }
+            missingEntries.forEach((entry) => {
                 this.logger.warn(`Skipping training for missing user ${entry.userId.toString()}: ${entry.training}.`);
             });
+        }
 
         if (createData.length > 0) {
             await this.prismaService.userTrainings.createMany({
