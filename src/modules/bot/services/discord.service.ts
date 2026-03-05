@@ -1,7 +1,7 @@
 import {Injectable, Logger} from "@nestjs/common";
 import {ChannelType, Client, GuildTextBasedChannel} from "discord.js";
 import {SimpleUserEntity} from "../models/entities/simple-user.entity";
-import {Units} from "../../../../prisma/generated/enums";
+import {Trainings, Units} from "../../../../prisma/generated/enums";
 import {ConfigService} from "@nestjs/config";
 import * as necord from "necord";
 
@@ -133,5 +133,36 @@ export class DiscordService {
         if (hasXi8Role) return Units.XI_8;
         if (hasSiteSecurityRole) return Units.SITE_SECURITY;
         return null;
+    }
+
+    getTrainingRoleId(training: Trainings) {
+        switch (training) {
+            case Trainings.FIM:
+                return this.configService.get<string>("DISCORD_FIM_ROLE_ID");
+            case Trainings.CQC:
+                return this.configService.get<string>("DISCORD_CQC_ROLE_ID");
+            case Trainings.FIRST_AID:
+                return this.configService.get<string>("DISCORD_FIRST_AID_ROLE_ID");
+            case Trainings.BREACHER:
+                return this.configService.get<string>("DISCORD_BREACHER_ROLE_ID");
+            case Trainings.GRENADE_LAUNCHER:
+                return this.configService.get<string>("DISCORD_GRENADE_LAUNCHER_ROLE_ID");
+            case Trainings.FLAMETHROWER:
+                return this.configService.get<string>("DISCORD_FLAMETHROWER_ROLE_ID");
+            case Trainings.ANTI_TANK:
+                return this.configService.get<string>("DISCORD_ANTI_TANK_ROLE_ID");
+            case Trainings.ARTIFICIER:
+                return this.configService.get<string>("DISCORD_ARTIFICIER_ROLE_ID");
+            case Trainings.SNIPER:
+                return this.configService.get<string>("DISCORD_SNIPER_ROLE_ID");
+            case Trainings.MACHINE_GUNNER:
+                return this.configService.get<string>("DISCORD_MACHINE_GUNNER_ROLE_ID");
+            case Trainings.MEDIC:
+                return this.configService.get<string>("DISCORD_MEDIC_ROLE_ID");
+            case Trainings.DRONE:
+                return this.configService.get<string>("DISCORD_DRONE_ROLE_ID");
+            default:
+                return null;
+        }
     }
 }

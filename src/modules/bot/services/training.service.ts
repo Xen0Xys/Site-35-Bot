@@ -173,6 +173,9 @@ export class TrainingService {
                 },
             },
         });
+        const roleId = this.discordService.getTrainingRoleId(training);
+        if (roleId) await this.discordService.removeRoleFromMember(userId, roleId);
+        else this.logger.warn(`No role ID configured for training ${training}, skipping role removal.`);
         this.logger.log(`Removed training ${training} for user ${userId.toString()}.`);
     }
 
@@ -217,10 +220,21 @@ export class TrainingService {
         }
 
         if (createData.length > 0) {
+            // Create all trainings in a single batch to minimize database calls, relying on skipDuplicates to ignore existing entries
             await this.prismaService.userTrainings.createMany({
                 data: createData,
                 skipDuplicates: true,
             });
+            // Assign roles for all trainings in parallel (retroactive)
+            const rolePromises = createData.map((entry) => {
+                const roleId = this.discordService.getTrainingRoleId(entry.training);
+                if (!roleId) {
+                    this.logger.warn(`No role ID configured for training ${entry.training}, skipping role assignment.`);
+                    return Promise.resolve();
+                }
+                return this.discordService.addRoleToMember(entry.user_id, roleId);
+            });
+            await Promise.all(rolePromises);
             this.logger.log(`Registered ${createData.length} trainings (batch).`);
         } else {
             this.logger.log("No trainings to register after filtering.");
