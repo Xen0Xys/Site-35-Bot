@@ -174,17 +174,24 @@ export class RankService {
 
             if (existingUsers.find((u) => u.id.toString() === userId)?.rank === Ranks.CDT) {
                 try {
-                    await this.discordService.removeRoleFromMember(
-                        entry.userId,
-                        this.configService.get<string>("DISCORD_SITE_SECURITY_ROLE_ID") || "",
-                    );
-                    await this.discordService.addRoleToMember(
-                        entry.userId,
-                        this.configService.get<string>("DISCORD_XI_8_ROLE_ID") || "",
-                    );
-                    this.logger.log(`Updated roles for CDT user ${userId}.`);
+                    await Promise.all([
+                        this.discordService.removeRoleFromMember(entry.userId, this.discordService.siteSecurityRoleId),
+                        this.discordService.addRoleToMember(entry.userId, this.discordService.xi8RoleId),
+                    ]);
+                    this.logger.log(`Updated roles for CDT user ${userId} promoted to ${entry.rank}.`);
                 } catch {
-                    this.logger.warn(`Failed to update roles for CDT user ${userId}.`);
+                    this.logger.warn(`Failed to update roles for CDT user ${userId} promoted to ${entry.rank}.`);
+                }
+            } else if (entry.rank === Ranks.CDT) {
+                try {
+                    await Promise.all([
+                        this.discordService.removeRoleFromMember(entry.userId, this.discordService.xi8RoleId),
+                        this.discordService.removeRoleFromMember(entry.userId, this.discordService.alpha1RoleId),
+                        this.discordService.addRoleToMember(entry.userId, this.discordService.siteSecurityRoleId),
+                    ]);
+                    this.logger.log(`Updated roles for new CDT user ${userId}.`);
+                } catch {
+                    this.logger.warn(`Failed to update roles for new CDT user ${userId}.`);
                 }
             }
 
