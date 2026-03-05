@@ -42,6 +42,7 @@ export class RankService {
     }
 
     private sanitizeMessages(messages: string[]) {
+        // Normalize text for tolerant matching across accents, punctuation, and casing.
         const normalize = (value: string) =>
             value
                 .normalize("NFD")
@@ -77,6 +78,7 @@ export class RankService {
 
         messages.forEach((message) => {
             const cleanedMessage = message.replace(/\r/g, "");
+            // Support optional header lines and parse each logical block separately.
             const headerRegex = /site\s*35\s*[|\-–—]*\s*registre\s*des\s*promotions\s*\/?\s*demotions?/i;
             const blocks = cleanedMessage
                 .split(headerRegex)
@@ -86,6 +88,7 @@ export class RankService {
 
             targetBlocks.forEach((block) => {
                 const preview = sanitizePreview(block);
+                // The rank is typically the last "Grade actuel" line in the block.
                 const rankMatches = Array.from(block.matchAll(/Grade actuel\s*:\s*(.+)$/gim));
                 const rankMatch = rankMatches.length > 0 ? rankMatches[rankMatches.length - 1] : null;
                 if (!rankMatch) return;
@@ -103,6 +106,7 @@ export class RankService {
                     return;
                 }
 
+                // Extract member id from mention or raw numeric id.
                 const mentionMatch = block.match(/<@!?(\d{17,})>/);
                 const idMatch = mentionMatch ?? block.match(/\b(\d{17,})\b/);
                 if (!idMatch) return;

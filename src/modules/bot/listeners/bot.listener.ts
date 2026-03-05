@@ -25,6 +25,7 @@ export class BotListener {
 
     @necord.Once("clientReady")
     async onReady() {
+        // Initial sync: users, trainings, and status messages.
         const users: SimpleUserEntity[] = await this.discordService.getGuildMembers();
         await this.userService.registerUsers(users);
         await this.trainingService.registerTrainings();
@@ -47,9 +48,11 @@ export class BotListener {
         if (message.author.bot) return;
         switch (message.channelId) {
             case this.configService.get<string>("DISCORD_TRAINING_CHANNEL_ID"):
+                // Parse new training messages to update user trainings.
                 await this.trainingService.registerTrainingsFromMessage(message.content);
                 break;
             case this.configService.get<string>("DISCORD_PROMO_DEMO_CHANNEL_ID"):
+                // Parse promotion/demotion messages to update user ranks.
                 await this.rankService.registerPromoDemoFromMessage(message.content);
                 break;
         }

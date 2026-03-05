@@ -36,6 +36,7 @@ export class UserService {
     }
 
     extractUserInfo(displayName: string) {
+        // Expected nickname format: [Rank] F. Lastname
         const usernameRegex = /^\[([^\]]+)]\s([a-zA-Z])\.\s(.+)$/;
         const matches = displayName.match(usernameRegex);
         if (!matches) return null;

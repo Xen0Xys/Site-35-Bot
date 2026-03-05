@@ -75,6 +75,7 @@ export class DiscordService {
             this.logger.error("DISCORD_TRAINING_CHANNEL_ID is not defined.");
             return null;
         }
+        // Only allow text-based guild channels (exclude announcements).
         const trainingChannel = guild.channels.cache.get(trainingChannelId);
         if (!trainingChannel || !trainingChannel.isTextBased()) return null;
         if (trainingChannel.type === ChannelType.GuildAnnouncement) return null;
@@ -89,6 +90,7 @@ export class DiscordService {
             this.logger.error("DISCORD_RANK_CHANNEL_ID is not defined.");
             return null;
         }
+        // Only allow text-based guild channels (exclude announcements).
         const rankChannel = guild.channels.cache.get(rankChannelId);
         if (!rankChannel || !rankChannel.isTextBased()) return null;
         if (rankChannel.type === ChannelType.GuildAnnouncement) return null;

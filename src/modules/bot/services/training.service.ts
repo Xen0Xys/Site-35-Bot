@@ -15,6 +15,7 @@ export class TrainingService {
     ) {}
 
     sanitizeMessages(messages: string[]) {
+        // Normalize text for resilient matching across accents, punctuation, and casing.
         const normalize = (value: string) =>
             value
                 .normalize("NFD")
@@ -34,10 +35,12 @@ export class TrainingService {
 
         const trainings = Object.values(Trainings) as Trainings[];
 
+        // Common aliases and typos used in real messages.
         const trainingAliases: Record<string, Trainings> = {
             fim: Trainings.FIM,
             cqc: Trainings.CQC,
             "premiers secours": Trainings.FIRST_AID,
+            "premiers soins": Trainings.FIRST_AID,
             "first aid": Trainings.FIRST_AID,
             breacher: Trainings.BREACHER,
             "lance grenade": Trainings.GRENADE_LAUNCHER,
@@ -76,6 +79,7 @@ export class TrainingService {
 
         messages.forEach((message) => {
             const cleanedMessage = message.replace(/\r/g, "");
+            // Support optional header lines and parse each logical block separately.
             const headerRegex = /site\s*35\s*[|\-–—]*\s*registre\s*d['’]?attribution\s*des\s*formations/i;
             const blocks = cleanedMessage
                 .split(headerRegex)
@@ -85,6 +89,7 @@ export class TrainingService {
 
             targetBlocks.forEach((block) => {
                 const preview = sanitizePreview(block);
+                // Prefer explicit "Formation completee" lines when present.
                 const trainingLineMatches = Array.from(
                     block.matchAll(/formation compl[eé]t[eé]e\s*[:-]?\s*(.+)/gi),
                 ).map((match) => match[1].trim());
@@ -96,15 +101,12 @@ export class TrainingService {
 
                 const trainingCandidates = trainingLineMatches.length > 0 ? trainingLineMatches : fallbackMatches;
 
-                if (trainingCandidates.length === 0) {
-                    return;
-                }
+                if (trainingCandidates.length === 0) return;
 
+                // Extract member id from mention or raw numeric id.
                 const mentionMatch = block.match(/<@!?(\d{17,})>/);
                 const idMatch = mentionMatch ?? block.match(/\b(\d{17,})\b/);
-                if (!idMatch) {
-                    return;
-                }
+                if (!idMatch) return;
 
                 const userId = BigInt(idMatch[1]);
 
@@ -113,6 +115,7 @@ export class TrainingService {
                     if (!trainingRaw) return;
 
                     const normalizedTraining = normalize(trainingRaw);
+                    // Ignore instructor mentions which are not actual trainings.
                     if (normalizedTraining.includes("instructeur")) return;
                     const training =
                         normalizedLabelToTraining.get(normalizedTraining) ??
@@ -181,13 +184,15 @@ export class TrainingService {
 
     private async addTrainings(
         sanitizedTrainings: {userId: bigint; training: Trainings}[],
-        requireExistingUser: boolean = false, // Throw error if true, otherwise just skip entries with missing users
+        // Throw error when true, otherwise skip entries with missing users.
+        requireExistingUser: boolean = false,
     ) {
         if (sanitizedTrainings.length === 0) {
             this.logger.log("No sanitized trainings to register.");
             return;
         }
 
+        // Deduplicate to prevent redundant DB writes and role changes.
         const uniqueEntries = new Map<string, {userId: bigint; training: Trainings}>();
         sanitizedTrainings.forEach((entry) => {
             const key = `${entry.userId.toString()}-${entry.training}`;
@@ -220,12 +225,12 @@ export class TrainingService {
         }
 
         if (createData.length > 0) {
-            // Create all trainings in a single batch to minimize database calls, relying on skipDuplicates to ignore existing entries
+            // Batch insert to minimize DB calls; skipDuplicates avoids errors for existing entries.
             await this.prismaService.userTrainings.createMany({
                 data: createData,
                 skipDuplicates: true,
             });
-            // Assign roles for all trainings in parallel (retroactive)
+            // Assign roles for all trainings in parallel (retroactive).
             const rolePromises = createData.map((entry) => {
                 const roleId = this.discordService.getTrainingRoleId(entry.training);
                 if (!roleId) {

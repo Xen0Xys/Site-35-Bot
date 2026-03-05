@@ -26,6 +26,7 @@ export class StatusService {
             return null;
         }
         try {
+            // TODO: Use configured serverIp/serverQueryPort instead of hardcoded values below.
             const state: QueryResult = await GameDig.query({
                 type: "armareforger",
                 host: "23.109.63.157",
