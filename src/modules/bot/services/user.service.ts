@@ -1,4 +1,4 @@
-import {Injectable, Logger, NotFoundException} from "@nestjs/common";
+import {Injectable, Logger} from "@nestjs/common";
 import {PrismaService} from "../../helper/prisma.service";
 import {SimpleUserEntity} from "../models/entities/simple-user.entity";
 import {Ranks, Users} from "../../../../prisma/generated/client";
@@ -49,17 +49,6 @@ export class UserService {
     toRank(rank: string): Ranks {
         const formattedRank = rank.toUpperCase().replace(".", "").replace(" ", "_");
         return Ranks[formattedRank as keyof typeof Ranks] || null;
-    }
-
-    toRankFromLabel(label: string): Ranks | null {
-        const normalizedLabel = label.toUpperCase().replace(/\s+/g, " ").trim();
-        const rankMap = this.i18nService.getRankMap();
-        const rank = (Object.keys(rankMap) as Ranks[]).find((r) => rankMap[r].toUpperCase() === normalizedLabel);
-        if (!rank) {
-            this.logger.warn(`Unknown rank label: "${label}" (normalized: "${normalizedLabel}").`);
-            return null;
-        }
-        return rank;
     }
 
     formatShortRank(rank: Ranks): string {
@@ -131,18 +120,5 @@ export class UserService {
         this.logger.log(
             `Updated user ${user.displayName} with new rank ${userInfo.rank}, name ${userInfo.name} and unit ${user.unit}.`,
         );
-    }
-
-    async updateUserRank(userId: bigint, rank: Ranks, name: string) {
-        const user = await this.prismaService.users.findUnique({where: {id: userId}});
-        if (!user) throw new NotFoundException(`User with id ${userId.toString()} not found, cannot update rank.`);
-        await this.prismaService.users.update({
-            where: {id: userId},
-            data: {
-                rank,
-                name,
-            },
-        });
-        this.logger.log(`Updated user ${userId.toString()} with new rank ${rank} and name ${name}.`);
     }
 }

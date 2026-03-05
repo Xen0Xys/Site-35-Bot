@@ -1,4 +1,4 @@
-import {Injectable, Logger} from "@nestjs/common";
+import {Injectable, Logger, NotFoundException} from "@nestjs/common";
 import {Ranks} from "../../../../prisma/generated/enums";
 import {I18nService} from "../../helper/i18n.service";
 import {PrismaService} from "../../helper/prisma.service";
@@ -14,9 +14,38 @@ export class RankService {
         private readonly discordService: DiscordService,
     ) {}
 
-    private formatShortRank(rank: Ranks): string {
+    async registerPromoDemoFromMessage(content: string) {
+        const sanitizedRanks = this.sanitizeMessages([content]);
+        await this.registerSanitizedRanks(sanitizedRanks);
+    }
+
+    formatShortRank(rank: Ranks): string {
         const formattedShortRank = rank.toUpperCase().replace("_", " ");
         return formattedShortRank.includes(" ") ? `${formattedShortRank}.` : formattedShortRank;
+    }
+
+    toRankFromLabel(label: string): Ranks | null {
+        const normalizedLabel = label.toUpperCase().replace(/\s+/g, " ").trim();
+        const rankMap = this.i18nService.getRankMap();
+        const rank = (Object.keys(rankMap) as Ranks[]).find((r) => rankMap[r].toUpperCase() === normalizedLabel);
+        if (!rank) {
+            this.logger.warn(`Unknown rank label: "${label}" (normalized: "${normalizedLabel}").`);
+            return null;
+        }
+        return rank;
+    }
+
+    async updateUserRank(userId: bigint, rank: Ranks, name: string) {
+        const user = await this.prismaService.users.findUnique({where: {id: userId}});
+        if (!user) throw new NotFoundException(`User with id ${userId.toString()} not found, cannot update rank.`);
+        await this.prismaService.users.update({
+            where: {id: userId},
+            data: {
+                rank,
+                name,
+            },
+        });
+        this.logger.log(`Updated user ${userId.toString()} with new rank ${rank} and name ${name}.`);
     }
 
     private sanitizeMessages(messages: string[]) {
@@ -81,11 +110,6 @@ export class RankService {
         });
 
         return sanitized;
-    }
-
-    async registerPromoDemoFromMessage(content: string) {
-        const sanitizedRanks = this.sanitizeMessages([content]);
-        await this.registerSanitizedRanks(sanitizedRanks);
     }
 
     private async registerSanitizedRanks(sanitizedRanks: {userId: bigint; rank: Ranks}[]) {
