@@ -13,6 +13,7 @@ import {StatusService} from "../services/status.service";
 @Injectable()
 export class BotListener {
     private readonly logger = new Logger(BotListener.name);
+    private readonly siteSecurityRoleId: string;
     private readonly xi8RoleId: string;
     private readonly alpha1RoleId: string;
 
@@ -25,6 +26,7 @@ export class BotListener {
         private readonly rankService: RankService,
         private readonly statusService: StatusService,
     ) {
+        this.siteSecurityRoleId = this.configService.get<string>("DISCORD_SITE_SECURITY_ROLE_ID") || "";
         this.xi8RoleId = this.configService.get<string>("DISCORD_XI_8_ROLE_ID") || "";
         this.alpha1RoleId = this.configService.get<string>("DISCORD_ALPHA_1_ROLE_ID") || "";
     }
@@ -68,13 +70,13 @@ export class BotListener {
 
     @necord.On("guildMemberRoleAdd")
     async onGuildMemberRoleAdd(@necord.Context() [member, role]: necord.ContextOf<"guildMemberRoleAdd">) {
-        if (![this.xi8RoleId, this.alpha1RoleId].includes(role.id)) return;
+        if (![this.siteSecurityRoleId, this.xi8RoleId, this.alpha1RoleId].includes(role.id)) return;
         await this.syncMember(member, "Guild member role added");
     }
 
     @necord.On("guildMemberRoleRemove")
     async onGuildMemberRoleRemove(@necord.Context() [member, role]: necord.ContextOf<"guildMemberRoleRemove">) {
-        if (![this.xi8RoleId, this.alpha1RoleId].includes(role.id)) return;
+        if (![this.siteSecurityRoleId, this.xi8RoleId, this.alpha1RoleId].includes(role.id)) return;
         await this.syncMember(member, "Guild member role removed");
     }
 
@@ -92,10 +94,12 @@ export class BotListener {
     }
 
     private getMemberUnit(member: necord.ContextOf<"guildMemberNicknameUpdate">[0]) {
+        const hasSiteSecurityRole = this.siteSecurityRoleId ? member.roles.cache.has(this.siteSecurityRoleId) : false;
         const hasXi8Role = this.xi8RoleId ? member.roles.cache.has(this.xi8RoleId) : false;
         const hasAlpha1Role = this.alpha1RoleId ? member.roles.cache.has(this.alpha1RoleId) : false;
         if (hasAlpha1Role) return Units.ALPHA_1;
         if (hasXi8Role) return Units.XI_8;
+        if (hasSiteSecurityRole) return Units.SITE_SECURITY;
         return null;
     }
 

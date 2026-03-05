@@ -1,0 +1,2 @@
+-- AlterEnum
+ALTER TYPE "units" ADD VALUE 'SITE_SECURITY';

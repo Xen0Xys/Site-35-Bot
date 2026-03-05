@@ -95,6 +95,8 @@ export class I18nService {
 
     formatUnit(unit: Units): string {
         switch (unit) {
+            case Units.SITE_SECURITY:
+                return "Sécurité du Site";
             case Units.XI_8:
                 return "Ξ-8";
             case Units.ALPHA_1:

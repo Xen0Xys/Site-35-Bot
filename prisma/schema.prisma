@@ -8,6 +8,7 @@ datasource db {
 }
 
 enum Units {
+  SITE_SECURITY
   XI_8
   ALPHA_1
 
