@@ -84,29 +84,39 @@ export class RankService {
 
         messages.forEach((message) => {
             const cleanedMessage = message.replace(/\r/g, "");
-            const preview = sanitizePreview(cleanedMessage);
-            const rankMatch = cleanedMessage.match(/Grade actuel\s*:\s*(.+)$/im);
-            if (!rankMatch) return;
+            const headerRegex = /site\s*35\s*[|\-–—]*\s*registre\s*des\s*promotions\s*\/?\s*demotions?/i;
+            const blocks = cleanedMessage
+                .split(headerRegex)
+                .map((block) => block.trim())
+                .filter((block) => block.length > 0);
+            const targetBlocks = blocks.length > 0 ? blocks : [cleanedMessage];
 
-            const rankRaw = rankMatch[1].trim();
-            if (!rankRaw) return;
+            targetBlocks.forEach((block) => {
+                const preview = sanitizePreview(block);
+                const rankMatches = Array.from(block.matchAll(/Grade actuel\s*:\s*(.+)$/gim));
+                const rankMatch = rankMatches.length > 0 ? rankMatches[rankMatches.length - 1] : null;
+                if (!rankMatch) return;
 
-            const normalizedRank = normalize(rankRaw);
-            const rank =
-                normalizedLabelToRank.get(normalizedRank) ?? normalizedLabelToRank.get(normalizeNoSpace(rankRaw));
-            if (!rank) {
-                this.logger.warn(
-                    `Unknown rank "${rankRaw}" (normalized: "${normalizedRank}"), skipping. Preview: "${preview}"`,
-                );
-                return;
-            }
+                const rankRaw = rankMatch[1].trim();
+                if (!rankRaw) return;
 
-            const mentionMatch = cleanedMessage.match(/<@!?(\d{17,})>/);
-            const idMatch = mentionMatch ?? cleanedMessage.match(/\b(\d{17,})\b/);
-            if (!idMatch) return;
+                const normalizedRank = normalize(rankRaw);
+                const rank =
+                    normalizedLabelToRank.get(normalizedRank) ?? normalizedLabelToRank.get(normalizeNoSpace(rankRaw));
+                if (!rank) {
+                    this.logger.warn(
+                        `Unknown rank "${rankRaw}" (normalized: "${normalizedRank}"), skipping. Preview: "${preview}"`,
+                    );
+                    return;
+                }
 
-            const userId = BigInt(idMatch[1]);
-            sanitized.push({userId, rank});
+                const mentionMatch = block.match(/<@!?(\d{17,})>/);
+                const idMatch = mentionMatch ?? block.match(/\b(\d{17,})\b/);
+                if (!idMatch) return;
+
+                const userId = BigInt(idMatch[1]);
+                sanitized.push({userId, rank});
+            });
         });
 
         return sanitized;
