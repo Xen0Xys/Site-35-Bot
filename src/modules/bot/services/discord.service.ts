@@ -3,15 +3,23 @@ import {ChannelType, Client, GuildTextBasedChannel} from "discord.js";
 import {SimpleUserEntity} from "../models/entities/simple-user.entity";
 import {Units} from "../../../../prisma/generated/enums";
 import {ConfigService} from "@nestjs/config";
+import * as necord from "necord";
 
 @Injectable()
 export class DiscordService {
+    public readonly siteSecurityRoleId: string;
+    public readonly xi8RoleId: string;
+    public readonly alpha1RoleId: string;
     private readonly logger = new Logger(DiscordService.name);
 
     constructor(
         private readonly client: Client,
         private readonly configService: ConfigService,
-    ) {}
+    ) {
+        this.siteSecurityRoleId = this.configService.get<string>("DISCORD_SITE_SECURITY_ROLE_ID") || "";
+        this.xi8RoleId = this.configService.get<string>("DISCORD_XI_8_ROLE_ID") || "";
+        this.alpha1RoleId = this.configService.get<string>("DISCORD_ALPHA_1_ROLE_ID") || "";
+    }
 
     async getGuild() {
         const guildId = process.env.DISCORD_GUILD_ID;
@@ -42,14 +50,10 @@ export class DiscordService {
         if (!guild) return [] as SimpleUserEntity[];
         const members = await guild.members.fetch();
         return members.map((member) => {
-            const hasXi8Role = member.roles.cache.has(this.configService.get<string>("DISCORD_XI_8_ROLE_ID") || "");
-            const hasAlpha1Role = member.roles.cache.has(
-                this.configService.get<string>("DISCORD_ALPHA_1_ROLE_ID") || "",
-            );
             return new SimpleUserEntity({
                 id: BigInt(member.id),
                 displayName: member.displayName,
-                unit: hasAlpha1Role ? Units.ALPHA_1 : hasXi8Role ? Units.XI_8 : null,
+                unit: this.getMemberUnit(member),
             });
         });
     }
@@ -89,5 +93,45 @@ export class DiscordService {
         if (!rankChannel || !rankChannel.isTextBased()) return null;
         if (rankChannel.type === ChannelType.GuildAnnouncement) return null;
         return rankChannel;
+    }
+
+    async removeRoleFromMember(memberId: bigint, roleId: string) {
+        const member = await this.getMemberFromId(memberId);
+        if (!member) {
+            this.logger.warn(`Member with ID ${memberId.toString()} not found, cannot remove role ${roleId}.`);
+            return;
+        }
+        try {
+            await member.roles.remove(roleId);
+            this.logger.log(`Removed role ${roleId} from member ${member.displayName} (${member.id}).`);
+        } catch (error) {
+            this.logger.error(
+                `Failed to remove role ${roleId} from member ${member.displayName} (${member.id}): ${error}`,
+            );
+        }
+    }
+
+    async addRoleToMember(memberId: bigint, roleId: string) {
+        const member = await this.getMemberFromId(memberId);
+        if (!member) {
+            this.logger.warn(`Member with ID ${memberId.toString()} not found, cannot add role ${roleId}.`);
+            return;
+        }
+        try {
+            await member.roles.add(roleId);
+            this.logger.log(`Added role ${roleId} to member ${member.displayName} (${member.id}).`);
+        } catch (error) {
+            this.logger.error(`Failed to add role ${roleId} to member ${member.displayName} (${member.id}): ${error}`);
+        }
+    }
+
+    getMemberUnit(member: necord.ContextOf<"guildMemberNicknameUpdate">[0]) {
+        const hasSiteSecurityRole = this.siteSecurityRoleId ? member.roles.cache.has(this.siteSecurityRoleId) : false;
+        const hasXi8Role = this.xi8RoleId ? member.roles.cache.has(this.xi8RoleId) : false;
+        const hasAlpha1Role = this.alpha1RoleId ? member.roles.cache.has(this.alpha1RoleId) : false;
+        if (hasAlpha1Role) return Units.ALPHA_1;
+        if (hasXi8Role) return Units.XI_8;
+        if (hasSiteSecurityRole) return Units.SITE_SECURITY;
+        return null;
     }
 }

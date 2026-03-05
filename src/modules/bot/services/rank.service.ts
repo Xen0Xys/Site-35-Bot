@@ -3,6 +3,7 @@ import {Ranks} from "../../../../prisma/generated/enums";
 import {I18nService} from "../../helper/i18n.service";
 import {PrismaService} from "../../helper/prisma.service";
 import {DiscordService} from "./discord.service";
+import {ConfigService} from "@nestjs/config";
 
 @Injectable()
 export class RankService {
@@ -12,11 +13,12 @@ export class RankService {
         private readonly prismaService: PrismaService,
         private readonly i18nService: I18nService,
         private readonly discordService: DiscordService,
+        private readonly configService: ConfigService,
     ) {}
 
     async registerPromoDemoFromMessage(content: string) {
         const sanitizedRanks = this.sanitizeMessages([content]);
-        await this.registerSanitizedRanks(sanitizedRanks);
+        await this.updateUserRanks(sanitizedRanks);
     }
 
     formatShortRank(rank: Ranks): string {
@@ -35,17 +37,8 @@ export class RankService {
         return rank;
     }
 
-    async updateUserRank(userId: bigint, rank: Ranks, name: string) {
-        const user = await this.prismaService.users.findUnique({where: {id: userId}});
-        if (!user) throw new NotFoundException(`User with id ${userId.toString()} not found, cannot update rank.`);
-        await this.prismaService.users.update({
-            where: {id: userId},
-            data: {
-                rank,
-                name,
-            },
-        });
-        this.logger.log(`Updated user ${userId.toString()} with new rank ${rank} and name ${name}.`);
+    async updateUserRank(userId: bigint, rank: Ranks) {
+        await this.updateUserRanks([{userId, rank}], true);
     }
 
     private sanitizeMessages(messages: string[]) {
@@ -122,7 +115,10 @@ export class RankService {
         return sanitized;
     }
 
-    private async registerSanitizedRanks(sanitizedRanks: {userId: bigint; rank: Ranks}[]) {
+    private async updateUserRanks(
+        sanitizedRanks: {userId: bigint; rank: Ranks}[],
+        requireExistingUser: boolean = false,
+    ) {
         if (sanitizedRanks.length === 0) {
             this.logger.log("No rank updates to register.");
             return;
@@ -138,7 +134,7 @@ export class RankService {
         const userIds = Array.from(new Set(entries.map((entry) => entry.userId)));
         const existingUsers = await this.prismaService.users.findMany({
             where: {id: {in: userIds}},
-            select: {id: true, name: true},
+            select: {id: true, name: true, rank: true},
         });
         const existingUserIds = new Set(existingUsers.map((user) => user.id.toString()));
         const existingUserNames = new Map(existingUsers.map((user) => [user.id.toString(), user.name]));
@@ -146,9 +142,18 @@ export class RankService {
         const updates = entries.filter((entry) => existingUserIds.has(entry.userId.toString()));
         const skipped = entries.filter((entry) => !existingUserIds.has(entry.userId.toString()));
 
-        skipped.forEach((entry) => {
-            this.logger.warn(`Skipping rank update for missing user ${entry.userId.toString()}: ${entry.rank}.`);
-        });
+        if (skipped.length > 0) {
+            if (requireExistingUser) {
+                const entry = skipped[0];
+                throw new NotFoundException(
+                    `User with id ${entry.userId.toString()} not found, cannot update rank ${entry.rank}.`,
+                );
+            }
+
+            skipped.forEach((entry) => {
+                this.logger.warn(`Skipping rank update for missing user ${entry.userId.toString()}: ${entry.rank}.`);
+            });
+        }
 
         if (updates.length === 0) {
             this.logger.log("No rank updates to register after filtering.");
@@ -165,6 +170,22 @@ export class RankService {
 
             if (!parsedName && member) {
                 this.logger.warn(`Failed to parse nickname for ${userId}, keeping stored name.`);
+            }
+
+            if (existingUsers.find((u) => u.id.toString() === userId)?.rank === Ranks.CDT) {
+                try {
+                    await this.discordService.removeRoleFromMember(
+                        entry.userId,
+                        this.configService.get<string>("DISCORD_SITE_SECURITY_ROLE_ID") || "",
+                    );
+                    await this.discordService.addRoleToMember(
+                        entry.userId,
+                        this.configService.get<string>("DISCORD_XI_8_ROLE_ID") || "",
+                    );
+                    this.logger.log(`Updated roles for CDT user ${userId}.`);
+                } catch {
+                    this.logger.warn(`Failed to update roles for CDT user ${userId}.`);
+                }
             }
 
             await this.prismaService.users.update({

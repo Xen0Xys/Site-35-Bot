@@ -42,7 +42,7 @@ export class RankCommand {
         const updatedNickname = `[${formattedShortNewRank}] ${updatedName}`;
 
         try {
-            await this.rankService.updateUserRank(BigInt(args.member.id), newRank, updatedName);
+            await this.rankService.updateUserRank(BigInt(args.member.id), newRank);
             await rankChannel.send({
                 content:
                     `**Site 35 | Registre des promotions/demotions**\n\n` +
