@@ -41,6 +41,7 @@ Ajoute une formation au profil d'un membre.
     - `formation` (obligatoire, liste avec auto-complétion)
 - Effet :
     - Ajoute la formation dans la base de données.
+    - Ajoute le rôle de la formation au membre.
     - Publie un message dans le salon des formations.
     - Réponse privée de confirmation.
 
