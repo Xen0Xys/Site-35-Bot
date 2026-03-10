@@ -1,7 +1,7 @@
 import {Injectable, Logger} from "@nestjs/common";
-import {ChannelType, Client, GuildTextBasedChannel} from "discord.js";
+import {ChannelType, Client, Collection, Guild, GuildMember, GuildTextBasedChannel} from "discord.js";
 import {SimpleUserEntity} from "../models/entities/simple-user.entity";
-import {Trainings, Units} from "../../../../prisma/generated/enums";
+import {Medals, Trainings, Units} from "../../../../prisma/generated/enums";
 import {ConfigService} from "@nestjs/config";
 import * as necord from "necord";
 
@@ -52,7 +52,26 @@ export class DiscordService {
     async getGuildMembers() {
         const guild = await this.getGuild();
         if (!guild) return [] as SimpleUserEntity[];
-        const members = await guild.members.fetch();
+        const cachedMembers = guild.members.cache;
+        if (cachedMembers.size > 0) {
+            return cachedMembers.map((member) => {
+                return new SimpleUserEntity({
+                    id: BigInt(member.id),
+                    displayName: member.displayName,
+                    unit: this.getMemberUnit(member),
+                });
+            });
+        }
+
+        const allowFetch = this.configService.get<string>("DISCORD_ALLOW_MEMBERS_FETCH") === "true";
+        if (!allowFetch) {
+            this.logger.warn(
+                "Guild members cache is empty and DISCORD_ALLOW_MEMBERS_FETCH is disabled; skipping full fetch to avoid rate limits.",
+            );
+            return [] as SimpleUserEntity[];
+        }
+
+        const members = await this.fetchAllMembersWithRetry(guild);
         return members.map((member) => {
             return new SimpleUserEntity({
                 id: BigInt(member.id),
@@ -60,15 +79,6 @@ export class DiscordService {
                 unit: this.getMemberUnit(member),
             });
         });
-    }
-
-    async getTrainingMessages(): Promise<string[]> {
-        const guild = await this.getGuild();
-        if (!guild) return [];
-        const trainingChannel = await this.getTrainingChannel();
-        if (!trainingChannel) return [];
-        const messages = await trainingChannel.messages.fetch({limit: 100});
-        return messages.map((message) => message.content);
     }
 
     async getTrainingChannel(): Promise<GuildTextBasedChannel | null> {
@@ -84,6 +94,38 @@ export class DiscordService {
         if (!trainingChannel || !trainingChannel.isTextBased()) return null;
         if (trainingChannel.type === ChannelType.GuildAnnouncement) return null;
         return trainingChannel;
+    }
+
+    async getTrainingMessages(): Promise<string[]> {
+        const guild = await this.getGuild();
+        if (!guild) return [];
+        const trainingChannel = await this.getTrainingChannel();
+        if (!trainingChannel) return [];
+        const messages = await trainingChannel.messages.fetch({limit: 100});
+        return messages.map((message) => message.content);
+    }
+
+    async getMedalChannel(): Promise<GuildTextBasedChannel | null> {
+        const guild = await this.getGuild();
+        if (!guild) return null;
+        const medalChannelId = process.env.DISCORD_MEDAL_CHANNEL_ID;
+        if (!medalChannelId) {
+            this.logger.error("DISCORD_MEDAL_CHANNEL_ID is not defined.");
+            return null;
+        }
+        const medalChannel = guild.channels.cache.get(medalChannelId);
+        if (!medalChannel || !medalChannel.isTextBased()) return null;
+        if (medalChannel.type === ChannelType.GuildAnnouncement) return null;
+        return medalChannel;
+    }
+
+    async getMedalMessages(): Promise<string[]> {
+        const guild = await this.getGuild();
+        if (!guild) return [];
+        const medalChannel = await this.getMedalChannel();
+        if (!medalChannel) return [];
+        const messages = await medalChannel.messages.fetch({limit: 100});
+        return messages.map((message) => message.content);
     }
 
     async getRankChannel(): Promise<GuildTextBasedChannel | null> {
@@ -123,6 +165,10 @@ export class DiscordService {
             this.logger.warn(`Member with ID ${memberId.toString()} not found, cannot add role ${roleId}.`);
             return;
         }
+        if (member.roles.cache.has(roleId)) {
+            this.logger.debug(`Member ${member.displayName} (${member.id}) already has role ${roleId}, skipping add.`);
+            return;
+        }
         try {
             await member.roles.add(roleId);
             this.logger.log(`Added role ${roleId} to member ${member.displayName} (${member.id}).`);
@@ -141,14 +187,20 @@ export class DiscordService {
         return null;
     }
 
-    getTrainingRoleId(training: Trainings) {
+    getTrainingRoleId(training: Trainings): string | null | undefined {
         switch (training) {
             case Trainings.FIM:
                 return this.configService.get<string>("DISCORD_FIM_ROLE_ID");
+            case Trainings.FIM_INSTRUCTOR:
+                return this.configService.get<string>("DISCORD_FIM_INSTRUCTOR_ROLE_ID");
             case Trainings.CQC:
                 return this.configService.get<string>("DISCORD_CQC_ROLE_ID");
+            case Trainings.CQC_INSTRUCTOR:
+                return this.configService.get<string>("DISCORD_CQC_INSTRUCTOR_ROLE_ID");
             case Trainings.FIRST_AID:
                 return this.configService.get<string>("DISCORD_FIRST_AID_ROLE_ID");
+            case Trainings.FIRST_AID_INSTRUCTOR:
+                return this.configService.get<string>("DISCORD_FIRST_AID_INSTRUCTOR_ROLE_ID");
             case Trainings.BREACHER:
                 return this.configService.get<string>("DISCORD_BREACHER_ROLE_ID");
             case Trainings.GRENADE_LAUNCHER:
@@ -169,6 +221,31 @@ export class DiscordService {
                 return this.configService.get<string>("DISCORD_DRONE_ROLE_ID");
             default:
                 return null;
+        }
+    }
+
+    getMedalRoleId(medal: Medals): string | null | undefined {
+        switch (medal) {
+            case Medals.CROSS_OF_TACTICAL_SUPREMACY:
+                return this.configService.get<string>("DISCORD_CROSS_OF_TACTICAL_SUPREMACY_ROLE_ID");
+            default:
+                return null;
+        }
+    }
+
+    private async fetchAllMembersWithRetry(guild: Guild): Promise<Collection<string, GuildMember>> {
+        try {
+            return await guild.members.fetch();
+        } catch (error: any) {
+            const retryAfter = error?.data?.retry_after;
+            if (retryAfter) {
+                const waitMs = Math.ceil(Number(retryAfter) * 1000);
+                this.logger.warn(`Guild member fetch rate-limited, retrying after ${Math.ceil(waitMs / 1000)}s.`);
+                await new Promise((resolve) => setTimeout(resolve, waitMs));
+                return await guild.members.fetch();
+            }
+            this.logger.error(`Failed to fetch guild members: ${error}`);
+            return guild.members.cache;
         }
     }
 }

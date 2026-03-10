@@ -50,12 +50,16 @@ export class RankCommand {
                     `Grade precedent : ${previousRank}\n` +
                     `Grade actuel : ${formattedShortNewRank}\n` +
                     `Raison de la promotion/demotion : ${args.reason}`,
+                allowedMentions: {
+                    parse: [],
+                    users: [args.member.id],
+                },
             });
             try {
                 await args.member.setNickname(updatedNickname);
                 return this.commandService.replyEphemeral(
                     interaction,
-                    `Changement de grade publie avec succes pour <@${args.member.id}>.`,
+                    `Changement de grade publié avec succès pour <@${args.member.id}>.`,
                 );
             } catch {
                 return this.commandService.replyEphemeral(

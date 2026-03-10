@@ -66,6 +66,18 @@ export class CommandService {
         return rankChannel;
     }
 
+    async getMedalChannelOrReply(interaction: necord.SlashCommandContext[0]) {
+        const medalChannel = await this.discordService.getMedalChannel();
+        if (!medalChannel) {
+            await this.replyEphemeral(
+                interaction,
+                "Medal channel not found or is not text-based. Please check the bot configuration.",
+            );
+            return null;
+        }
+        return medalChannel;
+    }
+
     async getMemberOrReply(interaction: necord.SlashCommandContext[0], memberId: bigint): Promise<GuildMember | null> {
         const member = await this.discordService.getMemberFromId(memberId);
         if (!member) {

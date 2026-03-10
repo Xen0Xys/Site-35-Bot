@@ -3,19 +3,57 @@ import {AttachmentBuilder, Colors, EmbedBuilder, Guild, GuildMember} from "disco
 import {UserEntity} from "../models/entities/user.entity";
 import path from "node:path";
 import {ServerDataEntity} from "../models/entities/server-data.entity";
+import {Medals} from "../../../../prisma/generated/enums";
 
 @Injectable()
 export class BotEmbedsService {
-    getProfileEmbed(user: UserEntity, member: GuildMember, guild: Guild) {
+    getProfileEmbed(
+        user: UserEntity,
+        member: GuildMember,
+        guild: Guild,
+        medals?: {medals: Medals[]; formattedMedals: string[]},
+    ) {
         const logoAttachment = new AttachmentBuilder(
             path.resolve(process.cwd(), "assets", "scp_foundation_logo.webp"),
             {
                 name: "scp_foundation_logo.webp",
             },
         );
-        const trainings = user.formattedTrainings.length
-            ? user.formattedTrainings.map((t) => `• ${t}`).join("\n")
-            : "Aucune formation enregistrée";
+        const trainingLabelsByType = new Map(
+            user.trainings.map((training, index) => [training, user.formattedTrainings[index]]),
+        );
+        const qualificationTypes = new Set(["FIM", "CQC", "FIRST_AID"]);
+        const instructorTrainings = user.trainings.filter((training) => training.endsWith("_INSTRUCTOR"));
+        const qualificationTrainings = user.trainings.filter(
+            (training) => !training.endsWith("_INSTRUCTOR") && qualificationTypes.has(training),
+        );
+        const specialtyTrainings = user.trainings.filter(
+            (training) => !training.endsWith("_INSTRUCTOR") && !qualificationTypes.has(training),
+        );
+        const formatTrainings = (trainings: typeof user.trainings, emptyMessage: string) =>
+            trainings.length
+                ? trainings
+                      .map((training) => trainingLabelsByType.get(training))
+                      .filter((label): label is string => Boolean(label))
+                      .sort((a, b) => a.localeCompare(b, "fr"))
+                      .map((label) => `• ${label}`)
+                      .join("\n")
+                : emptyMessage;
+        const specialties = formatTrainings(specialtyTrainings, "Aucune");
+        const qualifications = formatTrainings(qualificationTrainings, "Aucune");
+        const instructors = formatTrainings(instructorTrainings, "Non");
+        const medalLabelsByType = medals
+            ? new Map(medals.medals.map((medal, index) => [medal, medals.formattedMedals[index]]))
+            : new Map();
+        const formattedMedals = medals?.medals?.length
+            ? medals.medals
+                  .map((medal) => medalLabelsByType.get(medal))
+                  .filter((label): label is string => Boolean(label))
+                  .sort((a, b) => a.localeCompare(b, "fr"))
+                  .map((label) => `• ${label}`)
+                  .join("\n")
+            : "Aucune";
+
         const embed = new EmbedBuilder()
             .setColor(Colors.DarkGrey)
             .setAuthor({
@@ -49,8 +87,24 @@ export class BotEmbedsService {
                     inline: true,
                 },
                 {
-                    name: "Formations suivies",
-                    value: trainings,
+                    name: "Spécialités",
+                    value: specialties,
+                    inline: true,
+                },
+                {
+                    name: "Qualifications",
+                    value: qualifications,
+                    inline: true,
+                },
+                {
+                    name: "Instructeur",
+                    value: instructors,
+                    inline: true,
+                },
+                {
+                    name: "Médailles",
+                    value: formattedMedals,
+                    inline: true,
                 },
                 {
                     name: "Secure. Contain. Protect.",
@@ -87,7 +141,7 @@ export class BotEmbedsService {
                 iconURL: "attachment://scp_foundation_logo.webp",
             })
             .setTitle("Statut du serveur")
-            .setDescription("Canal de surveillance ████ Site-35. Flux de telemetrie en temps reel. Acces restreint.")
+            .setDescription("Canal de surveillance ████ Site-35. Flux de télémétrie en temps réel. Accès restreint.")
             .addFields(
                 {
                     name: "Serveur",

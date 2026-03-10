@@ -5,6 +5,7 @@ import {DiscordService} from "../services/discord.service";
 import {UserService} from "../services/user.service";
 import {SimpleUserEntity} from "../models/entities/simple-user.entity";
 import {TrainingService} from "../services/training.service";
+import {MedalService} from "../services/medal.service";
 import {ConfigService} from "@nestjs/config";
 import {RankService} from "../services/rank.service";
 import {StatusService} from "../services/status.service";
@@ -18,6 +19,7 @@ export class BotListener {
         private readonly discordService: DiscordService,
         private readonly userService: UserService,
         private readonly trainingService: TrainingService,
+        private readonly medalService: MedalService,
         private readonly configService: ConfigService,
         private readonly rankService: RankService,
         private readonly statusService: StatusService,
@@ -27,8 +29,13 @@ export class BotListener {
     async onReady() {
         // Initial sync: users, trainings, and status messages.
         const users: SimpleUserEntity[] = await this.discordService.getGuildMembers();
+        this.logger.log("Registering users...");
         await this.userService.registerUsers(users);
+        this.logger.log("Registering trainings...");
         await this.trainingService.registerTrainings();
+        this.logger.log("Registering medals...");
+        await this.medalService.registerMedals();
+        this.logger.log("Updating bot activity and status messages...");
         await Promise.all([this.statusService.updateBotActivity(), this.statusService.updateStatusMessages()]);
         this.logger.log(`Bot logged in as ${this.client.user?.username}`);
     }
@@ -54,6 +61,53 @@ export class BotListener {
             case this.configService.get<string>("DISCORD_PROMO_DEMO_CHANNEL_ID"):
                 // Parse promotion/demotion messages to update user ranks.
                 await this.rankService.registerPromoDemoFromMessage(message.content);
+                break;
+            case this.configService.get<string>("DISCORD_MEDAL_CHANNEL_ID"):
+                // Parse medal attribution messages to update user medals.
+                await this.medalService.registerMedalsFromMessage(message.content);
+                break;
+        }
+    }
+
+    @necord.On("messageDelete")
+    async onMessageDelete(@necord.Context() [message]: necord.ContextOf<"messageDelete">) {
+        switch (message.channelId) {
+            case this.configService.get<string>("DISCORD_TRAINING_CHANNEL_ID"):
+                // Remove trainings associated with the deleted message.
+                const sanitizedMessage = this.trainingService.sanitizeMessages([message.content || ""]);
+                if (!sanitizedMessage || !sanitizedMessage[0]) {
+                    this.logger.warn(`Failed to sanitize deleted training message: ${message.content}`);
+                    return;
+                }
+                type SanitizedTraining = (typeof sanitizedMessage)[number];
+                const uniqueTrainings = new Map<string, SanitizedTraining>();
+                sanitizedMessage.forEach((entry) => {
+                    const key = `${entry.userId.toString()}-${entry.training}`;
+                    if (!uniqueTrainings.has(key)) uniqueTrainings.set(key, entry);
+                });
+                await Promise.all(
+                    Array.from(uniqueTrainings.values()).map((entry) =>
+                        this.trainingService.removeTraining(entry.userId, entry.training),
+                    ),
+                );
+                break;
+            case this.configService.get<string>("DISCORD_MEDAL_CHANNEL_ID"):
+                // Remove medals associated with the deleted message.
+                const sanitizedMedalMessage = await this.medalService.sanitizeMessages([message.content || ""]);
+                if (!sanitizedMedalMessage || !sanitizedMedalMessage[0]) {
+                    this.logger.warn(`Failed to sanitize deleted medal message: ${message.content}`);
+                    return;
+                }
+                const uniqueMedals = new Map<string, (typeof sanitizedMedalMessage)[number]>();
+                sanitizedMedalMessage.forEach((entry) => {
+                    const key = `${entry.userId.toString()}-${entry.medal}`;
+                    if (!uniqueMedals.has(key)) uniqueMedals.set(key, entry);
+                });
+                await Promise.all(
+                    Array.from(uniqueMedals.values()).map((entry) =>
+                        this.medalService.removeMedal(entry.userId, entry.medal),
+                    ),
+                );
                 break;
         }
     }

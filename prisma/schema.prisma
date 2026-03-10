@@ -38,8 +38,11 @@ enum Ranks {
 
 enum Trainings {
   FIM
+  FIM_INSTRUCTOR
   CQC
+  CQC_INSTRUCTOR
   FIRST_AID
+  FIRST_AID_INSTRUCTOR
   BREACHER
   GRENADE_LAUNCHER
   FLAMETHROWER
@@ -59,29 +62,50 @@ enum MessageTypes {
   @@map("message_types")
 }
 
+enum Medals {
+  CROSS_OF_TACTICAL_SUPREMACY
+
+  @@map("medals")
+}
+
 model Users {
   id             BigInt          @id
   rank           Ranks
   name           String
   unit           Units?
   user_trainings UserTrainings[]
+  user_medals    UserMedals[]
+  created_at     DateTime        @default(now())
+  updated_at     DateTime        @default(now()) @updatedAt
 
   @@map("users")
 }
 
 model UserTrainings {
-  user_id  BigInt
-  training Trainings
-  user     Users     @relation(fields: [user_id], references: [id])
+  user_id    BigInt
+  training   Trainings
+  user       Users     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  created_at DateTime  @default(now())
 
   @@id([user_id, training])
   @@map("user_trainings")
+}
+
+model UserMedals {
+  user_id    BigInt
+  medal      Medals
+  user       Users    @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  created_at DateTime @default(now())
+
+  @@id([user_id, medal])
+  @@map("user_medals")
 }
 
 model TrackedMessages {
   message_id BigInt
   channel_id BigInt
   type       MessageTypes
+  created_at DateTime     @default(now())
 
   @@id([message_id, channel_id])
   @@map("tracked_messages")

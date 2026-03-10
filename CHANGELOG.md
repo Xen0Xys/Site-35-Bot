@@ -7,6 +7,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.1.0] - 2026-03-10
+
+### Added
+
+- Medal management with add/remove commands, medal channel parsing, and profile display.
+- Instructor training support for FIM, CQC, and first aid.
+- Medal and instructor role configuration entries in the example environment file.
+- Created/updated timestamps for users, trainings, medals, and tracked messages.
+
+### Changed
+
+- Profile embed now separates specialties, qualifications, instructors, and medals.
+- Training parsing now recognizes instructor mentions and aliases.
+- Added logging for registration steps and safe role assignment skips.
+
+### Fixed
+
+- French accents in rank confirmation and status embed copy.
+
 ## [1.0.0] - 2026-03-05
 
 ### Added

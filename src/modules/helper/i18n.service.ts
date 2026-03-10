@@ -1,5 +1,5 @@
 import {Injectable} from "@nestjs/common";
-import {Ranks, Trainings, Units} from "../../../prisma/generated/enums";
+import {Medals, Ranks, Trainings, Units} from "../../../prisma/generated/enums";
 
 @Injectable()
 export class I18nService {
@@ -56,10 +56,16 @@ export class I18nService {
         switch (training) {
             case Trainings.FIM:
                 return "FIM";
+            case Trainings.FIM_INSTRUCTOR:
+                return "Instructeur FIM";
             case Trainings.CQC:
                 return "CQC";
+            case Trainings.CQC_INSTRUCTOR:
+                return "Instructeur CQC";
             case Trainings.FIRST_AID:
                 return "Premiers Secours";
+            case Trainings.FIRST_AID_INSTRUCTOR:
+                return "Instructeur Premiers Secours";
             case Trainings.BREACHER:
                 return "Breacher";
             case Trainings.GRENADE_LAUNCHER:
@@ -89,6 +95,25 @@ export class I18nService {
             const trainingKey = training as keyof typeof Trainings;
             const trainingValue = Trainings[trainingKey];
             map[trainingValue] = this.formatTraining(trainingValue);
+        }
+        return map;
+    }
+
+    formatMedal(medal: Medals): string {
+        switch (medal) {
+            case Medals.CROSS_OF_TACTICAL_SUPREMACY:
+                return "Croix de Suprématie Tactique";
+            default:
+                return medal;
+        }
+    }
+
+    getMedalMap(): Record<Medals, string> {
+        const map: Record<Medals, string> = {} as Record<Medals, string>;
+        for (const medal in Medals) {
+            const medalKey = medal as keyof typeof Medals;
+            const medalValue = Medals[medalKey];
+            map[medalValue] = this.formatMedal(medalValue);
         }
         return map;
     }
