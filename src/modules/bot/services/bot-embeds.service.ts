@@ -33,9 +33,9 @@ export class BotEmbedsService {
                       .map((label) => `• ${label}`)
                       .join("\n")
                 : emptyMessage;
-        const specialties = formatTrainings(specialtyTrainings, "Aucune specialite enregistree");
-        const qualifications = formatTrainings(qualificationTrainings, "Aucune qualification enregistree");
-        const instructors = formatTrainings(instructorTrainings, "Aucun role d'instructeur enregistre");
+        const specialties = formatTrainings(specialtyTrainings, "Aucune");
+        const qualifications = formatTrainings(qualificationTrainings, "Aucune");
+        const instructors = formatTrainings(instructorTrainings, "Non");
         const embed = new EmbedBuilder()
             .setColor(Colors.DarkGrey)
             .setAuthor({
@@ -69,7 +69,7 @@ export class BotEmbedsService {
                     inline: true,
                 },
                 {
-                    name: "Specialites",
+                    name: "Spécialités",
                     value: specialties,
                     inline: true,
                 },
