@@ -12,7 +12,7 @@ export class AddMedalDto {
     member: GuildMember;
 
     @StringOption({
-        name: "médaille",
+        name: "medaille",
         description: "Nom de la médaille à ajouter",
         autocomplete: true,
         required: true,

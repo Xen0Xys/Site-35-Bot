@@ -13,7 +13,7 @@ export class MedalAutocompleteInterceptor extends AutocompleteInterceptor {
         const focused = interaction.options.getFocused(true);
         let choices: string[] = [];
 
-        if (focused.name === "médaille") choices = Object.values(this.i18nService.getMedalMap());
+        if (focused.name === "medaille") choices = Object.values(this.i18nService.getMedalMap());
 
         return interaction.respond(
             choices

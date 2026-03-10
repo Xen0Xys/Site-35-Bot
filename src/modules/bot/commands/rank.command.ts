@@ -50,6 +50,10 @@ export class RankCommand {
                     `Grade precedent : ${previousRank}\n` +
                     `Grade actuel : ${formattedShortNewRank}\n` +
                     `Raison de la promotion/demotion : ${args.reason}`,
+                allowedMentions: {
+                    parse: [],
+                    users: [args.member.id],
+                },
             });
             try {
                 await args.member.setNickname(updatedNickname);

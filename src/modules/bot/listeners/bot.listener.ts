@@ -79,16 +79,35 @@ export class BotListener {
                     this.logger.warn(`Failed to sanitize deleted training message: ${message.content}`);
                     return;
                 }
-                await this.trainingService.removeTraining(sanitizedMessage[0].userId, sanitizedMessage[0].training);
+                type SanitizedTraining = (typeof sanitizedMessage)[number];
+                const uniqueTrainings = new Map<string, SanitizedTraining>();
+                sanitizedMessage.forEach((entry) => {
+                    const key = `${entry.userId.toString()}-${entry.training}`;
+                    if (!uniqueTrainings.has(key)) uniqueTrainings.set(key, entry);
+                });
+                await Promise.all(
+                    Array.from(uniqueTrainings.values()).map((entry) =>
+                        this.trainingService.removeTraining(entry.userId, entry.training),
+                    ),
+                );
                 break;
             case this.configService.get<string>("DISCORD_MEDAL_CHANNEL_ID"):
                 // Remove medals associated with the deleted message.
-                const sanitizedMedalMessage = this.medalService.sanitizeMessages([message.content || ""]);
+                const sanitizedMedalMessage = await this.medalService.sanitizeMessages([message.content || ""]);
                 if (!sanitizedMedalMessage || !sanitizedMedalMessage[0]) {
                     this.logger.warn(`Failed to sanitize deleted medal message: ${message.content}`);
                     return;
                 }
-                await this.medalService.removeMedal(sanitizedMedalMessage[0].userId, sanitizedMedalMessage[0].medal);
+                const uniqueMedals = new Map<string, (typeof sanitizedMedalMessage)[number]>();
+                sanitizedMedalMessage.forEach((entry) => {
+                    const key = `${entry.userId.toString()}-${entry.medal}`;
+                    if (!uniqueMedals.has(key)) uniqueMedals.set(key, entry);
+                });
+                await Promise.all(
+                    Array.from(uniqueMedals.values()).map((entry) =>
+                        this.medalService.removeMedal(entry.userId, entry.medal),
+                    ),
+                );
                 break;
         }
     }

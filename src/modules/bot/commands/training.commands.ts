@@ -40,6 +40,10 @@ export class TrainingCommands {
             await this.trainingService.addTraining(BigInt(args.member.id), training);
             await trainingChannel.send({
                 content: `**Site 35 | Registre d'attribution des formations**\n\n- Nom : <@${args.member.id}>\n- Grade : ${args.member.displayName.match(/^\[([^\]]+)]/)?.[1] ?? "Unknown"}\n- Formation complétée : ${args.trainingName}`,
+                allowedMentions: {
+                    parse: [],
+                    users: [args.member.id],
+                },
             });
             return this.commandService.replyEphemeral(
                 interaction,

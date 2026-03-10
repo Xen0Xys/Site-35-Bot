@@ -1,5 +1,5 @@
 import {Injectable, Logger} from "@nestjs/common";
-import {ChannelType, Client, GuildTextBasedChannel} from "discord.js";
+import {ChannelType, Client, Collection, Guild, GuildMember, GuildTextBasedChannel} from "discord.js";
 import {SimpleUserEntity} from "../models/entities/simple-user.entity";
 import {Medals, Trainings, Units} from "../../../../prisma/generated/enums";
 import {ConfigService} from "@nestjs/config";
@@ -52,7 +52,26 @@ export class DiscordService {
     async getGuildMembers() {
         const guild = await this.getGuild();
         if (!guild) return [] as SimpleUserEntity[];
-        const members = await guild.members.fetch();
+        const cachedMembers = guild.members.cache;
+        if (cachedMembers.size > 0) {
+            return cachedMembers.map((member) => {
+                return new SimpleUserEntity({
+                    id: BigInt(member.id),
+                    displayName: member.displayName,
+                    unit: this.getMemberUnit(member),
+                });
+            });
+        }
+
+        const allowFetch = this.configService.get<string>("DISCORD_ALLOW_MEMBERS_FETCH") === "true";
+        if (!allowFetch) {
+            this.logger.warn(
+                "Guild members cache is empty and DISCORD_ALLOW_MEMBERS_FETCH is disabled; skipping full fetch to avoid rate limits.",
+            );
+            return [] as SimpleUserEntity[];
+        }
+
+        const members = await this.fetchAllMembersWithRetry(guild);
         return members.map((member) => {
             return new SimpleUserEntity({
                 id: BigInt(member.id),
@@ -147,7 +166,7 @@ export class DiscordService {
             return;
         }
         if (member.roles.cache.has(roleId)) {
-            this.logger.warn(`Member ${member.displayName} (${member.id}) already has role ${roleId}, skipping add.`);
+            this.logger.debug(`Member ${member.displayName} (${member.id}) already has role ${roleId}, skipping add.`);
             return;
         }
         try {
@@ -211,6 +230,22 @@ export class DiscordService {
                 return this.configService.get<string>("DISCORD_CROSS_OF_TACTICAL_SUPREMACY_ROLE_ID");
             default:
                 return null;
+        }
+    }
+
+    private async fetchAllMembersWithRetry(guild: Guild): Promise<Collection<string, GuildMember>> {
+        try {
+            return await guild.members.fetch();
+        } catch (error: any) {
+            const retryAfter = error?.data?.retry_after;
+            if (retryAfter) {
+                const waitMs = Math.ceil(Number(retryAfter) * 1000);
+                this.logger.warn(`Guild member fetch rate-limited, retrying after ${Math.ceil(waitMs / 1000)}s.`);
+                await new Promise((resolve) => setTimeout(resolve, waitMs));
+                return await guild.members.fetch();
+            }
+            this.logger.error(`Failed to fetch guild members: ${error}`);
+            return guild.members.cache;
         }
     }
 }

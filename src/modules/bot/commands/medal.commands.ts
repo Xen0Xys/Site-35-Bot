@@ -43,6 +43,11 @@ export class MedalCommands {
             await this.medalService.addMedal(BigInt(args.member.id), medal);
             await medalChannel.send({
                 content: `**Site 35 | Registre d'attribution des médailles**\n\n- Nom : <@${args.member.id}>\n- Médaille attribuée : <@&${roleId}>\n- Contexte : ${args.contexte}`,
+                allowedMentions: {
+                    parse: [],
+                    users: [args.member.id],
+                    roles: [roleId],
+                },
             });
             return this.commandService.replyEphemeral(
                 interaction,

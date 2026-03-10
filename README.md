@@ -67,6 +67,31 @@ Retire une formation du profil d'un membre.
     - Supprime la formation dans la base de données.
     - Réponse privée de confirmation.
 
+### `/add-medal`
+
+Ajoute une médaille au profil d'un membre.
+
+- Options :
+    - `joueur` (obligatoire)
+    - `medaille` (obligatoire, liste avec auto-complétion)
+    - `contexte` (obligatoire)
+- Effet :
+    - Ajoute la médaille dans la base de données.
+    - Ajoute le rôle de la médaille au membre.
+    - Publie un message dans le salon des médailles.
+    - Réponse privée de confirmation.
+
+### `/remove-medal`
+
+Retire une médaille du profil d'un membre.
+
+- Options :
+    - `joueur` (obligatoire)
+    - `medaille` (obligatoire, liste avec auto-complétion)
+- Effet :
+    - Retire la médaille dans la base de données.
+    - Réponse privée de confirmation.
+
 ### `/set-rank`
 
 Enregistre une promotion ou une démotion dans le registre.
@@ -112,7 +137,9 @@ Affiche le statut du serveur dans le salon actuel.
 
 - Au démarrage, il synchronise tous les membres du serveur, et il met à jour son activité et les messages de statut.
 - Il lit les derniers messages du salon des formations et enregistre les formations détectées.
+- Il lit les derniers messages du salon des médailles et enregistre les médailles détectées.
 - Quand un message est posté dans le salon des formations, il tente d'enregistrer la formation.
+- Quand un message est posté dans le salon des médailles, il tente d'enregistrer la médaille.
 - Quand un message est posté dans le salon des promotions/démotions, il tente de mettre à jour le grade.
 - Quand un membre change de pseudo ou reçoit/perd certains rôles (Ξ-8, α-1), il synchronise son profil.
 - À intervalles réguliers (toutes les minutes), il actualise l'activité du bot et les messages de statut.

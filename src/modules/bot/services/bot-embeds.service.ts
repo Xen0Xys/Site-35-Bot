@@ -3,6 +3,7 @@ import {AttachmentBuilder, Colors, EmbedBuilder, Guild, GuildMember} from "disco
 import {UserEntity} from "../models/entities/user.entity";
 import path from "node:path";
 import {ServerDataEntity} from "../models/entities/server-data.entity";
+import {Medals} from "../../../../prisma/generated/enums";
 
 @Injectable()
 export class BotEmbedsService {
@@ -10,7 +11,7 @@ export class BotEmbedsService {
         user: UserEntity,
         member: GuildMember,
         guild: Guild,
-        medals?: {medals: string[]; formattedMedals: string[]},
+        medals?: {medals: Medals[]; formattedMedals: string[]},
     ) {
         const logoAttachment = new AttachmentBuilder(
             path.resolve(process.cwd(), "assets", "scp_foundation_logo.webp"),
