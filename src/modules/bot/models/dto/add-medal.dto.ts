@@ -12,8 +12,8 @@ export class AddMedalDto {
     member: GuildMember;
 
     @StringOption({
-        name: "medaille",
-        description: "Nom de la medaille a ajouter",
+        name: "médaille",
+        description: "Nom de la médaille à ajouter",
         autocomplete: true,
         required: true,
     })
@@ -21,7 +21,7 @@ export class AddMedalDto {
 
     @StringOption({
         name: "contexte",
-        description: "Contexte de l'attribution de la medaille",
+        description: "Contexte de l'attribution de la médaille",
         required: true,
     })
     contexte: string;

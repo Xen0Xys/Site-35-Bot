@@ -12,8 +12,8 @@ export class RemoveMedalDto {
     member: GuildMember;
 
     @StringOption({
-        name: "medaille",
-        description: "Nom de la medaille a retirer",
+        name: "médaille",
+        description: "Nom de la médaille à retirer",
         autocomplete: true,
         required: true,
     })

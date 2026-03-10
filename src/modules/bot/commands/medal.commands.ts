@@ -16,7 +16,7 @@ export class MedalCommands {
     @UseInterceptors(MedalAutocompleteInterceptor)
     @necord.SlashCommand({
         name: "add-medal",
-        description: "Ajoute une medaille au profil de l'utilisateur",
+        description: "Ajoute une médaille au profil de l'utilisateur",
     })
     async addMedal(@necord.Context() [interaction]: necord.SlashCommandContext, @necord.Options() args: AddMedalDto) {
         if (!(await this.commandService.getGuildOrReply(interaction))) return;
@@ -56,7 +56,7 @@ export class MedalCommands {
     @UseInterceptors(MedalAutocompleteInterceptor)
     @necord.SlashCommand({
         name: "remove-medal",
-        description: "Retire une medaille du profil de l'utilisateur",
+        description: "Retire une médaille du profil de l'utilisateur",
     })
     async removeMedal(
         @necord.Context() [interaction]: necord.SlashCommandContext,
@@ -79,7 +79,7 @@ export class MedalCommands {
             await this.medalService.removeMedal(BigInt(args.member.id), medal);
             return this.commandService.replyEphemeral(
                 interaction,
-                `Medaille "${args.medalName}" retiree avec succes du profil de <@${args.member.id}>.`,
+                `Médaille "${args.medalName}" retirée avec succès du profil de <@${args.member.id}>.`,
             );
         } catch (e) {
             return this.commandService.replyEphemeral(interaction, `Failed to remove medal: ${e.message}`);

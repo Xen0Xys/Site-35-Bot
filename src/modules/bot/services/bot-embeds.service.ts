@@ -140,7 +140,7 @@ export class BotEmbedsService {
                 iconURL: "attachment://scp_foundation_logo.webp",
             })
             .setTitle("Statut du serveur")
-            .setDescription("Canal de surveillance ████ Site-35. Flux de telemetrie en temps reel. Acces restreint.")
+            .setDescription("Canal de surveillance ████ Site-35. Flux de télémétrie en temps réel. Accès restreint.")
             .addFields(
                 {
                     name: "Serveur",

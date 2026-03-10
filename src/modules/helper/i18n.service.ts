@@ -102,7 +102,7 @@ export class I18nService {
     formatMedal(medal: Medals): string {
         switch (medal) {
             case Medals.CROSS_OF_TACTICAL_SUPREMACY:
-                return "Croix de Suprematie Tactique";
+                return "Croix de Suprématie Tactique";
             default:
                 return medal;
         }

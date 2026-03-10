@@ -55,7 +55,7 @@ export class RankCommand {
                 await args.member.setNickname(updatedNickname);
                 return this.commandService.replyEphemeral(
                     interaction,
-                    `Changement de grade publie avec succes pour <@${args.member.id}>.`,
+                    `Changement de grade publié avec succès pour <@${args.member.id}>.`,
                 );
             } catch {
                 return this.commandService.replyEphemeral(
