@@ -54,6 +54,7 @@ export class MedalService {
     }
 
     async sanitizeMessages(messages: string[]): Promise<{userId: bigint; medal: Medals}[]> {
+        // Normalize text for resilient matching across accents, punctuation, and casing.
         const normalize = (value: string) =>
             value
                 .normalize("NFD")
@@ -63,44 +64,27 @@ export class MedalService {
                 .trim()
                 .replace(/\s+/g, " ");
 
+        const normalizeNoSpace = (value: string) => normalize(value).replace(/\s+/g, "");
+
         const sanitizePreview = (value: string, maxLength = 120) => {
             const flattened = value.replace(/\s+/g, " ").trim();
             if (flattened.length <= maxLength) return flattened;
             return `${flattened.slice(0, maxLength)}...`;
         };
 
-        const headerRegex = /site\s*35\s*[|\-–—]*\s*registre\s*d['’]?attribution\s*des\s*m[ée]dailles/i;
-        const medalLineRegex = /m[eé]daille\s*attribu[eé]e?\s*[:-]?\s*(.+)/gi;
+        const medals = Object.values(Medals) as Medals[];
 
-        const members = await this.discordService.getGuildMembers();
-        const memberIdByName = new Map<string, bigint[]>();
-        members.forEach((member) => {
-            const normalizedName = normalize(member.displayName);
-            const existing = memberIdByName.get(normalizedName);
-            if (existing) existing.push(member.id);
-            else memberIdByName.set(normalizedName, [member.id]);
-        });
-
-        const resolveUserIdByName = (name: string) => {
-            const normalizedName = normalize(name);
-            const candidates = memberIdByName.get(normalizedName);
-            if (!candidates || candidates.length === 0) return null;
-            if (candidates.length > 1) {
-                this.logger.warn(`Multiple members match name "${name}", skipping.`);
-                return null;
+        const normalizedLabelToMedal = new Map<string, Medals>();
+        const medalMap = this.i18nService.getMedalMap();
+        medals.forEach((medal) => {
+            const label = medalMap[medal];
+            if (label) {
+                normalizedLabelToMedal.set(normalize(label), medal);
+                normalizedLabelToMedal.set(normalizeNoSpace(label), medal);
             }
-            return candidates[0];
-        };
-
-        const extractUserId = (block: string) => {
-            const mentionMatch = block.match(/<@!?([0-9]{17,})>/);
-            const idMatch = mentionMatch ?? block.match(/\b([0-9]{17,})\b/);
-            if (idMatch) return BigInt(idMatch[1]);
-            const nameMatch = block.match(/nom\s*[:\-]\s*@?(.+)/i);
-            if (!nameMatch) return null;
-            const nameLine = nameMatch[1].split("\n")[0].trim();
-            return nameLine ? resolveUserIdByName(nameLine) : null;
-        };
+            normalizedLabelToMedal.set(normalize(medal), medal);
+            normalizedLabelToMedal.set(normalizeNoSpace(medal), medal);
+        });
 
         const extractRoleId = (value: string) => {
             const roleMentionMatch = value.match(/<@&([0-9]{17,})>/);
@@ -108,12 +92,12 @@ export class MedalService {
             return idMatch ? idMatch[1] : null;
         };
 
-        const medals = Object.values(Medals) as Medals[];
-
         const sanitized: {userId: bigint; medal: Medals}[] = [];
 
         messages.forEach((message) => {
             const cleanedMessage = message.replace(/\r/g, "");
+            // Support optional header lines and parse each logical block separately.
+            const headerRegex = /site\s*35\s*[|\-–—]*\s*registre\s*d['’]?attribution\s*des\s*m[ée]dailles/i;
             const blocks = cleanedMessage
                 .split(headerRegex)
                 .map((block) => block.trim())
@@ -122,20 +106,31 @@ export class MedalService {
 
             targetBlocks.forEach((block) => {
                 const preview = sanitizePreview(block);
-                const userId = extractUserId(block);
-                if (!userId) {
-                    this.logger.warn(`Missing user id in medal attribution message. Preview: "${preview}"`);
-                    return;
-                }
+                const medalLineMatches = Array.from(block.matchAll(/m[eé]daille\s*attribu[eé]e?\s*[:-]?\s*(.+)/gi)).map(
+                    (match) => match[1].trim(),
+                );
 
-                const medalLineMatches = Array.from(block.matchAll(medalLineRegex)).map((match) => match[1].trim());
-                if (medalLineMatches.length === 0) {
-                    this.logger.warn(`Missing medal line in attribution message. Preview: "${preview}"`);
-                    return;
-                }
+                const normalizedBlock = normalize(block);
+                const fallbackMatches = Array.from(normalizedBlock.matchAll(/medaille attribuee\s+(.+)/gi)).map(
+                    (match) => match[1].trim(),
+                );
 
-                medalLineMatches.forEach((medalLine) => {
-                    const medalRoleId = extractRoleId(medalLine) ?? extractRoleId(block);
+                const medalCandidates = medalLineMatches.length > 0 ? medalLineMatches : fallbackMatches;
+
+                if (medalCandidates.length === 0) return;
+
+                // Extract member id from mention or raw numeric id.
+                const mentionMatch = block.match(/<@!?([0-9]{17,})>/);
+                const idMatch = mentionMatch ?? block.match(/\b([0-9]{17,})\b/);
+                if (!idMatch) return;
+
+                const userId = BigInt(idMatch[1]);
+
+                medalCandidates.forEach((medalCandidate) => {
+                    const medalRaw = medalCandidate.split("site 35")[0].trim();
+                    if (!medalRaw) return;
+
+                    const medalRoleId = extractRoleId(medalRaw) ?? extractRoleId(block);
                     if (medalRoleId) {
                         const medal = medals.find((candidate) => {
                             const roleId = this.discordService.getMedalRoleId(candidate);
@@ -143,7 +138,7 @@ export class MedalService {
                         });
                         if (!medal) {
                             this.logger.warn(
-                                `Unknown medal role id ${medalRoleId} in attribution message. Medal: "${medalLine}". Preview: "${preview}"`,
+                                `Unknown medal role id ${medalRoleId} in attribution message. Medal: "${medalRaw}". Preview: "${preview}"`,
                             );
                             return;
                         }
@@ -151,11 +146,14 @@ export class MedalService {
                         return;
                     }
 
-                    const medalLabel = medalLine.replace(/^@+/, "").trim();
-                    const medal = this.toMedalFromLabel(medalLabel);
+                    const normalizedMedal = normalize(medalRaw.replace(/^@+/, "").trim());
+                    const normalizedNoSpaceMedal = normalizeNoSpace(medalRaw.replace(/^@+/, "").trim());
+                    const medal =
+                        normalizedLabelToMedal.get(normalizedMedal) ??
+                        normalizedLabelToMedal.get(normalizedNoSpaceMedal);
                     if (!medal) {
                         this.logger.warn(
-                            `Unknown medal label "${medalLabel}" in attribution message. Preview: "${preview}"`,
+                            `Unknown medal label "${medalRaw}" (normalized: "${normalizedMedal}"), skipping. Preview: "${preview}"`,
                         );
                         return;
                     }
