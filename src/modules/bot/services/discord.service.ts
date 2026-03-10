@@ -123,6 +123,10 @@ export class DiscordService {
             this.logger.warn(`Member with ID ${memberId.toString()} not found, cannot add role ${roleId}.`);
             return;
         }
+        if (member.roles.cache.has(roleId)) {
+            this.logger.warn(`Member ${member.displayName} (${member.id}) already has role ${roleId}, skipping add.`);
+            return;
+        }
         try {
             await member.roles.add(roleId);
             this.logger.log(`Added role ${roleId} to member ${member.displayName} (${member.id}).`);
