@@ -58,6 +58,21 @@ export class BotListener {
         }
     }
 
+    @necord.On("messageDelete")
+    async onMessageDelete(@necord.Context() [message]: necord.ContextOf<"messageDelete">) {
+        switch (message.channelId) {
+            case this.configService.get<string>("DISCORD_TRAINING_CHANNEL_ID"):
+                // Remove trainings associated with the deleted message.
+                const sanitizedMessage = this.trainingService.sanitizeMessages([message.content || ""]);
+                if (!sanitizedMessage || !sanitizedMessage[0]) {
+                    this.logger.warn(`Failed to sanitize deleted training message: ${message.content}`);
+                    return;
+                }
+                await this.trainingService.removeTraining(sanitizedMessage[0].userId, sanitizedMessage[0].training);
+                break;
+        }
+    }
+
     @necord.On("guildMemberNicknameUpdate")
     async onGuildMemberNicknameUpdate(@necord.Context() [member]: necord.ContextOf<"guildMemberNicknameUpdate">) {
         await this.syncMember(member, "Guild member nickname updated");
