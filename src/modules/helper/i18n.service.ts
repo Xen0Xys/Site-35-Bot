@@ -56,10 +56,16 @@ export class I18nService {
         switch (training) {
             case Trainings.FIM:
                 return "FIM";
+            case Trainings.FIM_INSTRUCTOR:
+                return "Instructeur FIM";
             case Trainings.CQC:
                 return "CQC";
+            case Trainings.CQC_INSTRUCTOR:
+                return "Instructeur CQC";
             case Trainings.FIRST_AID:
                 return "Premiers Secours";
+            case Trainings.FIRST_AID_INSTRUCTOR:
+                return "Instructeur Premiers Secours";
             case Trainings.BREACHER:
                 return "Breacher";
             case Trainings.GRENADE_LAUNCHER:

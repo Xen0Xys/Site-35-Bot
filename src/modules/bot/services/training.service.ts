@@ -38,10 +38,20 @@ export class TrainingService {
         // Common aliases and typos used in real messages.
         const trainingAliases: Record<string, Trainings> = {
             fim: Trainings.FIM,
+            "fim instructeur": Trainings.FIM_INSTRUCTOR,
+            "instructeur fim": Trainings.FIM_INSTRUCTOR,
             cqc: Trainings.CQC,
+            "cqc instructeur": Trainings.CQC_INSTRUCTOR,
+            "instructeur cqc": Trainings.CQC_INSTRUCTOR,
             "premiers secours": Trainings.FIRST_AID,
+            "premiers secours instructeur": Trainings.FIRST_AID_INSTRUCTOR,
+            "instructeur premiers secours": Trainings.FIRST_AID_INSTRUCTOR,
             "premiers soins": Trainings.FIRST_AID,
+            "premiers soins instructeur": Trainings.FIRST_AID_INSTRUCTOR,
+            "instructeur premiers soins": Trainings.FIRST_AID_INSTRUCTOR,
             "first aid": Trainings.FIRST_AID,
+            "first aid instructor": Trainings.FIRST_AID_INSTRUCTOR,
+            "instructor first aid": Trainings.FIRST_AID_INSTRUCTOR,
             breacher: Trainings.BREACHER,
             "lance grenade": Trainings.GRENADE_LAUNCHER,
             "lance grenades": Trainings.GRENADE_LAUNCHER,
@@ -59,6 +69,23 @@ export class TrainingService {
             medic: Trainings.MEDIC,
             medecin: Trainings.MEDIC,
             drone: Trainings.DRONE,
+        };
+
+        const resolveInstructorTraining = (normalizedTraining: string, normalizedNoSpaceTraining: string) => {
+            const hasInstructorKeyword =
+                normalizedTraining.includes("instructeur") || normalizedTraining.includes("instructor");
+            if (!hasInstructorKeyword) return null;
+
+            if (normalizedNoSpaceTraining.includes("fim")) return Trainings.FIM_INSTRUCTOR;
+            if (normalizedNoSpaceTraining.includes("cqc")) return Trainings.CQC_INSTRUCTOR;
+            if (
+                normalizedNoSpaceTraining.includes("premierssecours") ||
+                normalizedNoSpaceTraining.includes("premierssoins") ||
+                normalizedNoSpaceTraining.includes("firstaid")
+            )
+                return Trainings.FIRST_AID_INSTRUCTOR;
+
+            return null;
         };
 
         const normalizedLabelToTraining = new Map<string, Trainings>();
@@ -115,11 +142,11 @@ export class TrainingService {
                     if (!trainingRaw) return;
 
                     const normalizedTraining = normalize(trainingRaw);
-                    // Ignore instructor mentions which are not actual trainings.
-                    if (normalizedTraining.includes("instructeur")) return;
+                    const normalizedNoSpaceTraining = normalizeNoSpace(trainingRaw);
                     const training =
                         normalizedLabelToTraining.get(normalizedTraining) ??
-                        normalizedLabelToTraining.get(normalizeNoSpace(trainingRaw));
+                        normalizedLabelToTraining.get(normalizedNoSpaceTraining) ??
+                        resolveInstructorTraining(normalizedTraining, normalizedNoSpaceTraining);
                     if (!training) {
                         this.logger.warn(
                             `Unknown training "${trainingRaw}" (normalized: "${normalizedTraining}"), skipping. Preview: "${preview}"`,

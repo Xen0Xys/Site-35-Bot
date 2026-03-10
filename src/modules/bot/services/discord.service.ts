@@ -145,10 +145,16 @@ export class DiscordService {
         switch (training) {
             case Trainings.FIM:
                 return this.configService.get<string>("DISCORD_FIM_ROLE_ID");
+            case Trainings.FIM_INSTRUCTOR:
+                return this.configService.get<string>("DISCORD_FIM_INSTRUCTOR_ROLE_ID");
             case Trainings.CQC:
                 return this.configService.get<string>("DISCORD_CQC_ROLE_ID");
+            case Trainings.CQC_INSTRUCTOR:
+                return this.configService.get<string>("DISCORD_CQC_INSTRUCTOR_ROLE_ID");
             case Trainings.FIRST_AID:
                 return this.configService.get<string>("DISCORD_FIRST_AID_ROLE_ID");
+            case Trainings.FIRST_AID_INSTRUCTOR:
+                return this.configService.get<string>("DISCORD_FIRST_AID_INSTRUCTOR_ROLE_ID");
             case Trainings.BREACHER:
                 return this.configService.get<string>("DISCORD_BREACHER_ROLE_ID");
             case Trainings.GRENADE_LAUNCHER:
