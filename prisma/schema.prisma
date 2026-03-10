@@ -62,12 +62,19 @@ enum MessageTypes {
   @@map("message_types")
 }
 
+enum Medals {
+  CROSS_OF_TACTICAL_SUPREMACY
+
+  @@map("medals")
+}
+
 model Users {
   id             BigInt          @id
   rank           Ranks
   name           String
   unit           Units?
   user_trainings UserTrainings[]
+  user_medals    UserMedals[]
 
   @@map("users")
 }
@@ -79,6 +86,15 @@ model UserTrainings {
 
   @@id([user_id, training])
   @@map("user_trainings")
+}
+
+model UserMedals {
+  user_id BigInt
+  medal   Medals
+  user    Users  @relation(fields: [user_id], references: [id])
+
+  @@id([user_id, medal])
+  @@map("user_medals")
 }
 
 model TrackedMessages {

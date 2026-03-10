@@ -6,7 +6,12 @@ import {ServerDataEntity} from "../models/entities/server-data.entity";
 
 @Injectable()
 export class BotEmbedsService {
-    getProfileEmbed(user: UserEntity, member: GuildMember, guild: Guild) {
+    getProfileEmbed(
+        user: UserEntity,
+        member: GuildMember,
+        guild: Guild,
+        medals?: {medals: string[]; formattedMedals: string[]},
+    ) {
         const logoAttachment = new AttachmentBuilder(
             path.resolve(process.cwd(), "assets", "scp_foundation_logo.webp"),
             {
@@ -36,6 +41,18 @@ export class BotEmbedsService {
         const specialties = formatTrainings(specialtyTrainings, "Aucune");
         const qualifications = formatTrainings(qualificationTrainings, "Aucune");
         const instructors = formatTrainings(instructorTrainings, "Non");
+        const medalLabelsByType = medals
+            ? new Map(medals.medals.map((medal, index) => [medal, medals.formattedMedals[index]]))
+            : new Map();
+        const formattedMedals = medals?.medals?.length
+            ? medals.medals
+                  .map((medal) => medalLabelsByType.get(medal))
+                  .filter((label): label is string => Boolean(label))
+                  .sort((a, b) => a.localeCompare(b, "fr"))
+                  .map((label) => `• ${label}`)
+                  .join("\n")
+            : "Aucune";
+
         const embed = new EmbedBuilder()
             .setColor(Colors.DarkGrey)
             .setAuthor({
@@ -81,6 +98,11 @@ export class BotEmbedsService {
                 {
                     name: "Instructeur",
                     value: instructors,
+                    inline: true,
+                },
+                {
+                    name: "Médailles",
+                    value: formattedMedals,
                     inline: true,
                 },
                 {

@@ -5,6 +5,7 @@ import {DiscordService} from "../services/discord.service";
 import {UserService} from "../services/user.service";
 import {SimpleUserEntity} from "../models/entities/simple-user.entity";
 import {TrainingService} from "../services/training.service";
+import {MedalService} from "../services/medal.service";
 import {ConfigService} from "@nestjs/config";
 import {RankService} from "../services/rank.service";
 import {StatusService} from "../services/status.service";
@@ -18,6 +19,7 @@ export class BotListener {
         private readonly discordService: DiscordService,
         private readonly userService: UserService,
         private readonly trainingService: TrainingService,
+        private readonly medalService: MedalService,
         private readonly configService: ConfigService,
         private readonly rankService: RankService,
         private readonly statusService: StatusService,
@@ -27,8 +29,13 @@ export class BotListener {
     async onReady() {
         // Initial sync: users, trainings, and status messages.
         const users: SimpleUserEntity[] = await this.discordService.getGuildMembers();
+        this.logger.log("Registering users...");
         await this.userService.registerUsers(users);
+        this.logger.log("Registering trainings...");
         await this.trainingService.registerTrainings();
+        this.logger.log("Registering medals...");
+        await this.medalService.registerMedals();
+        this.logger.log("Updating bot activity and status messages...");
         await Promise.all([this.statusService.updateBotActivity(), this.statusService.updateStatusMessages()]);
         this.logger.log(`Bot logged in as ${this.client.user?.username}`);
     }
@@ -55,6 +62,10 @@ export class BotListener {
                 // Parse promotion/demotion messages to update user ranks.
                 await this.rankService.registerPromoDemoFromMessage(message.content);
                 break;
+            case this.configService.get<string>("DISCORD_MEDAL_CHANNEL_ID"):
+                // Parse medal attribution messages to update user medals.
+                await this.medalService.registerMedalsFromMessage(message.content);
+                break;
         }
     }
 
@@ -69,6 +80,15 @@ export class BotListener {
                     return;
                 }
                 await this.trainingService.removeTraining(sanitizedMessage[0].userId, sanitizedMessage[0].training);
+                break;
+            case this.configService.get<string>("DISCORD_MEDAL_CHANNEL_ID"):
+                // Remove medals associated with the deleted message.
+                const sanitizedMedalMessage = this.medalService.sanitizeMessages([message.content || ""]);
+                if (!sanitizedMedalMessage || !sanitizedMedalMessage[0]) {
+                    this.logger.warn(`Failed to sanitize deleted medal message: ${message.content}`);
+                    return;
+                }
+                await this.medalService.removeMedal(sanitizedMedalMessage[0].userId, sanitizedMedalMessage[0].medal);
                 break;
         }
     }

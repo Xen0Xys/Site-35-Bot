@@ -1,7 +1,7 @@
 import {Injectable, Logger} from "@nestjs/common";
 import {ChannelType, Client, GuildTextBasedChannel} from "discord.js";
 import {SimpleUserEntity} from "../models/entities/simple-user.entity";
-import {Trainings, Units} from "../../../../prisma/generated/enums";
+import {Medals, Trainings, Units} from "../../../../prisma/generated/enums";
 import {ConfigService} from "@nestjs/config";
 import * as necord from "necord";
 
@@ -62,15 +62,6 @@ export class DiscordService {
         });
     }
 
-    async getTrainingMessages(): Promise<string[]> {
-        const guild = await this.getGuild();
-        if (!guild) return [];
-        const trainingChannel = await this.getTrainingChannel();
-        if (!trainingChannel) return [];
-        const messages = await trainingChannel.messages.fetch({limit: 100});
-        return messages.map((message) => message.content);
-    }
-
     async getTrainingChannel(): Promise<GuildTextBasedChannel | null> {
         const guild = await this.getGuild();
         if (!guild) return null;
@@ -84,6 +75,38 @@ export class DiscordService {
         if (!trainingChannel || !trainingChannel.isTextBased()) return null;
         if (trainingChannel.type === ChannelType.GuildAnnouncement) return null;
         return trainingChannel;
+    }
+
+    async getTrainingMessages(): Promise<string[]> {
+        const guild = await this.getGuild();
+        if (!guild) return [];
+        const trainingChannel = await this.getTrainingChannel();
+        if (!trainingChannel) return [];
+        const messages = await trainingChannel.messages.fetch({limit: 100});
+        return messages.map((message) => message.content);
+    }
+
+    async getMedalChannel(): Promise<GuildTextBasedChannel | null> {
+        const guild = await this.getGuild();
+        if (!guild) return null;
+        const medalChannelId = process.env.DISCORD_MEDAL_CHANNEL_ID;
+        if (!medalChannelId) {
+            this.logger.error("DISCORD_MEDAL_CHANNEL_ID is not defined.");
+            return null;
+        }
+        const medalChannel = guild.channels.cache.get(medalChannelId);
+        if (!medalChannel || !medalChannel.isTextBased()) return null;
+        if (medalChannel.type === ChannelType.GuildAnnouncement) return null;
+        return medalChannel;
+    }
+
+    async getMedalMessages(): Promise<string[]> {
+        const guild = await this.getGuild();
+        if (!guild) return [];
+        const medalChannel = await this.getMedalChannel();
+        if (!medalChannel) return [];
+        const messages = await medalChannel.messages.fetch({limit: 100});
+        return messages.map((message) => message.content);
     }
 
     async getRankChannel(): Promise<GuildTextBasedChannel | null> {
@@ -145,7 +168,7 @@ export class DiscordService {
         return null;
     }
 
-    getTrainingRoleId(training: Trainings) {
+    getTrainingRoleId(training: Trainings): string | null | undefined {
         switch (training) {
             case Trainings.FIM:
                 return this.configService.get<string>("DISCORD_FIM_ROLE_ID");
@@ -177,6 +200,15 @@ export class DiscordService {
                 return this.configService.get<string>("DISCORD_MEDIC_ROLE_ID");
             case Trainings.DRONE:
                 return this.configService.get<string>("DISCORD_DRONE_ROLE_ID");
+            default:
+                return null;
+        }
+    }
+
+    getMedalRoleId(medal: Medals): string | null | undefined {
+        switch (medal) {
+            case Medals.CROSS_OF_TACTICAL_SUPREMACY:
+                return this.configService.get<string>("DISCORD_CROSS_OF_TACTICAL_SUPREMACY_ROLE_ID");
             default:
                 return null;
         }

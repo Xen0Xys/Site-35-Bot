@@ -1,0 +1,21 @@
+import {MemberOption, StringOption} from "necord";
+import {GuildMember} from "discord.js";
+import {Type} from "class-transformer";
+
+export class RemoveMedalDto {
+    @MemberOption({
+        name: "joueur",
+        description: "Nom du joueur",
+        required: true,
+    })
+    @Type(() => Object)
+    member: GuildMember;
+
+    @StringOption({
+        name: "medaille",
+        description: "Nom de la medaille a retirer",
+        autocomplete: true,
+        required: true,
+    })
+    medalName: string;
+}

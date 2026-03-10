@@ -4,12 +4,14 @@ import {MessageFlagsBitField} from "discord.js";
 import {Injectable} from "@nestjs/common";
 import * as necord from "necord";
 import {ProfileDto} from "../models/dto/profile.dto";
+import {MedalService} from "../services/medal.service";
 
 @Injectable()
 export class ProfileCommand {
     constructor(
         private readonly botEmbedsService: BotEmbedsService,
         private readonly commandService: CommandService,
+        private readonly medalService: MedalService,
     ) {}
 
     @necord.SlashCommand({
@@ -27,7 +29,11 @@ export class ProfileCommand {
         const guild = await this.commandService.getGuildOrReply(interaction);
         if (!guild) return;
 
-        const {embed, attachments} = this.botEmbedsService.getProfileEmbed(user, member, guild);
+        const {medals, formattedMedals} = this.medalService.getMemberMedals(member);
+        const {embed, attachments} = this.botEmbedsService.getProfileEmbed(user, member, guild, {
+            medals,
+            formattedMedals,
+        });
 
         return interaction.reply({
             embeds: [embed],
