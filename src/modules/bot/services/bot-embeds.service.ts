@@ -13,9 +13,29 @@ export class BotEmbedsService {
                 name: "scp_foundation_logo.webp",
             },
         );
-        const trainings = user.formattedTrainings.length
-            ? user.formattedTrainings.map((t) => `• ${t}`).join("\n")
-            : "Aucune formation enregistrée";
+        const trainingLabelsByType = new Map(
+            user.trainings.map((training, index) => [training, user.formattedTrainings[index]]),
+        );
+        const qualificationTypes = new Set(["FIM", "CQC", "FIRST_AID"]);
+        const instructorTrainings = user.trainings.filter((training) => training.endsWith("_INSTRUCTOR"));
+        const qualificationTrainings = user.trainings.filter(
+            (training) => !training.endsWith("_INSTRUCTOR") && qualificationTypes.has(training),
+        );
+        const specialtyTrainings = user.trainings.filter(
+            (training) => !training.endsWith("_INSTRUCTOR") && !qualificationTypes.has(training),
+        );
+        const formatTrainings = (trainings: typeof user.trainings, emptyMessage: string) =>
+            trainings.length
+                ? trainings
+                      .map((training) => trainingLabelsByType.get(training))
+                      .filter((label): label is string => Boolean(label))
+                      .sort((a, b) => a.localeCompare(b, "fr"))
+                      .map((label) => `• ${label}`)
+                      .join("\n")
+                : emptyMessage;
+        const specialties = formatTrainings(specialtyTrainings, "Aucune specialite enregistree");
+        const qualifications = formatTrainings(qualificationTrainings, "Aucune qualification enregistree");
+        const instructors = formatTrainings(instructorTrainings, "Aucun role d'instructeur enregistre");
         const embed = new EmbedBuilder()
             .setColor(Colors.DarkGrey)
             .setAuthor({
@@ -49,8 +69,19 @@ export class BotEmbedsService {
                     inline: true,
                 },
                 {
-                    name: "Formations suivies",
-                    value: trainings,
+                    name: "Specialites",
+                    value: specialties,
+                    inline: true,
+                },
+                {
+                    name: "Qualifications",
+                    value: qualifications,
+                    inline: true,
+                },
+                {
+                    name: "Instructeur",
+                    value: instructors,
+                    inline: true,
                 },
                 {
                     name: "Secure. Contain. Protect.",
