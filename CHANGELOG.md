@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.2.0] - 2026-03-22
+
+### Added
+
+- Added `ELITE_SNIPER`, `HELICOPTER_LICENSE`, and `HEAVY_VEHICLE_LICENSE` trainings with role mapping and localization.
+- Added related Prisma schema entries and migration for the new trainings.
+
+### Changed
+
+- Improved nickname parsing in rank and training commands to support both standard and unit pseudo formats.
+- Updated training attribution logging to mention trainers correctly with safer allowed mentions handling.
+
 ## [1.1.0] - 2026-03-10
 
 ### Added
