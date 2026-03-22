@@ -1,4 +1,4 @@
-import {Injectable, Logger} from "@nestjs/common";
+import {Injectable, Logger, NotFoundException} from "@nestjs/common";
 import * as necord from "necord";
 import {Client, CommandInteractionOption} from "discord.js";
 import {DiscordService} from "../services/discord.service";
@@ -28,6 +28,9 @@ export class BotListener {
     @necord.Once("clientReady")
     async onReady() {
         // Initial sync: users, trainings, and status messages.
+        const guild = await this.discordService.getGuild();
+        if (!guild) throw new NotFoundException("No guild");
+        await guild.members.fetch();
         const users: SimpleUserEntity[] = await this.discordService.getGuildMembers();
         this.logger.log("Registering users...");
         await this.userService.registerUsers(users);

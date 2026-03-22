@@ -213,12 +213,18 @@ export class DiscordService {
                 return this.configService.get<string>("DISCORD_ARTIFICIER_ROLE_ID");
             case Trainings.SNIPER:
                 return this.configService.get<string>("DISCORD_SNIPER_ROLE_ID");
+            case Trainings.ELITE_SNIPER:
+                return this.configService.get<string>("DISCORD_ELITE_SNIPER_ROLE_ID");
             case Trainings.MACHINE_GUNNER:
                 return this.configService.get<string>("DISCORD_MACHINE_GUNNER_ROLE_ID");
             case Trainings.MEDIC:
                 return this.configService.get<string>("DISCORD_MEDIC_ROLE_ID");
             case Trainings.DRONE:
                 return this.configService.get<string>("DISCORD_DRONE_ROLE_ID");
+            case Trainings.HELICOPTER_LICENSE:
+                return this.configService.get<string>("DISCORD_HELICOPTER_LICENSE_ROLE_ID");
+            case Trainings.HEAVY_VEHICLE_LICENSE:
+                return this.configService.get<string>("DISCORD_HEAVY_VEHICLE_LICENSE_ROLE_ID");
             default:
                 return null;
         }

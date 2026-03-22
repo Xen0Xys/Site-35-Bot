@@ -25,7 +25,7 @@ Le bot a besoin des permissions suivantes pour fonctionner correctement :
 ## Inviter le bot sur votre serveur
 
 1. Ouvrez ce lien dans votre navigateur :
-   https://discord.com/oauth2/authorize?client_id=[CLIENT_ID]&permissions=2550204480&integration_type=0&scope=bot
+   https://discord.com/oauth2/authorize?client_id=[CLIENT_ID]&permissions=5085097866947648&integration_type=0&scope=bot
 2. Choisissez votre serveur dans la liste.
 3. Vérifiez les permissions demandées.
 4. Cliquez sur "Autoriser".

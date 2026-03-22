@@ -66,12 +66,18 @@ export class TrainingService {
             artificier: Trainings.ARTIFICIER,
             sniper: Trainings.SNIPER,
             "tireur de precision": Trainings.SNIPER,
+            "elite sniper": Trainings.ELITE_SNIPER,
+            "tireur d elite": Trainings.ELITE_SNIPER,
             "fusilier mitrailleur": Trainings.MACHINE_GUNNER,
             "fusil mitrailleur": Trainings.MACHINE_GUNNER,
             "fusille mitrailleur": Trainings.MACHINE_GUNNER,
             medic: Trainings.MEDIC,
             medecin: Trainings.MEDIC,
             drone: Trainings.DRONE,
+            "permis poids lourd": Trainings.HEAVY_VEHICLE_LICENSE,
+            "poids lourd": Trainings.HEAVY_VEHICLE_LICENSE,
+            "permis helicoptere": Trainings.HELICOPTER_LICENSE,
+            helicoptere: Trainings.HELICOPTER_LICENSE,
         };
 
         const resolveInstructorTraining = (normalizedTraining: string, normalizedNoSpaceTraining: string) => {
