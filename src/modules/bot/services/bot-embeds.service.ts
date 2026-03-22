@@ -22,7 +22,7 @@ export class BotEmbedsService {
         const trainingLabelsByType = new Map(
             user.trainings.map((training, index) => [training, user.formattedTrainings[index]]),
         );
-        const qualificationTypes = new Set(["FIM", "CQC", "FIRST_AID"]);
+        const qualificationTypes = new Set(["FIM", "CQC", "FIRST_AID", "HELICOPTER_LICENSE", "HEAVY_VEHICLE_LICENSE"]);
         const instructorTrainings = user.trainings.filter((training) => training.endsWith("_INSTRUCTOR"));
         const qualificationTrainings = user.trainings.filter(
             (training) => !training.endsWith("_INSTRUCTOR") && qualificationTypes.has(training),

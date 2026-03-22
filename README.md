@@ -25,7 +25,7 @@ Le bot a besoin des permissions suivantes pour fonctionner correctement :
 ## Inviter le bot sur votre serveur
 
 1. Ouvrez ce lien dans votre navigateur :
-   https://discord.com/oauth2/authorize?client_id=[CLIENT_ID]&permissions=2550204480&integration_type=0&scope=bot
+   https://discord.com/oauth2/authorize?client_id=[CLIENT_ID]&permissions=5085097866947648&integration_type=0&scope=bot
 2. Choisissez votre serveur dans la liste.
 3. Vérifiez les permissions demandées.
 4. Cliquez sur "Autoriser".
@@ -129,8 +129,9 @@ Affiche le statut du serveur dans le salon actuel.
 - Pour `/add-training` et `/remove-training`, vous devez pouvoir écrire dans le salon des formations.
 - Pour `/set-rank`, vous devez pouvoir écrire dans le salon des promotions/démotions.
 - Pour `display-status`, vous devez pouvoir gérer les messages dans le salon actuel.
-- Le bot attend un format de pseudo précis : `[Grade] F. Nom`.
+- Le bot attend un format de pseudo précis : `[Grade] F. Nom` ou `[Grade] Unité "Pseudo"`
     - Exemple : `[CPT] J. Dupont`
+    - Exemple : `[SPE] A1-1 "Shadow"`
     - Si le format n'est pas respecté, la commande `/set-rank` échoue.
 
 ## Ce que le bot fait automatiquement

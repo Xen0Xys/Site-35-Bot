@@ -4,6 +4,7 @@ import {I18nService} from "../../helper/i18n.service";
 import {PrismaService} from "../../helper/prisma.service";
 import {DiscordService} from "./discord.service";
 import {ConfigService} from "@nestjs/config";
+import {UserService} from "./user.service";
 
 @Injectable()
 export class RankService {
@@ -14,6 +15,7 @@ export class RankService {
         private readonly i18nService: I18nService,
         private readonly discordService: DiscordService,
         private readonly configService: ConfigService,
+        private readonly userService: UserService,
     ) {}
 
     async registerPromoDemoFromMessage(content: string) {
@@ -168,8 +170,7 @@ export class RankService {
         for (const entry of updates) {
             const userId = entry.userId.toString();
             const member = await this.discordService.getMemberFromId(entry.userId);
-            const nameMatch = member?.displayName.match(/^\[[^\]]+]\s([a-zA-Z])\.\s(.+)$/);
-            const parsedName = nameMatch ? `${nameMatch[1]}. ${nameMatch[2].trim()}` : null;
+            const parsedName = member ? (this.userService.extractUserInfo(member.displayName)?.name ?? null) : null;
             const fallbackName = existingUserNames.get(userId) ?? null;
             const updatedName = parsedName ?? fallbackName;
 

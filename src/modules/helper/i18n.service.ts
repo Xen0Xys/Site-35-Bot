@@ -77,13 +77,19 @@ export class I18nService {
             case Trainings.ARTIFICIER:
                 return "Artificier";
             case Trainings.SNIPER:
-                return "Sniper";
+                return "Tireur de précision";
+            case Trainings.ELITE_SNIPER:
+                return "Tireur d'élite";
             case Trainings.MACHINE_GUNNER:
                 return "Fusilier Mitrailleur";
             case Trainings.MEDIC:
                 return "Médecin";
             case Trainings.DRONE:
                 return "Drone";
+            case Trainings.HELICOPTER_LICENSE:
+                return "Permis Hélicoptère";
+            case Trainings.HEAVY_VEHICLE_LICENSE:
+                return "Permis Poids Lourd";
             default:
                 return training;
         }

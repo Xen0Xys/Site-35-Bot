@@ -3,6 +3,7 @@ import {Injectable, UseInterceptors} from "@nestjs/common";
 import {CommandService} from "../services/command.service";
 import {SetRankDto} from "../models/dto/set-rank.dto";
 import {RankService} from "../services/rank.service";
+import {UserService} from "../services/user.service";
 import * as necord from "necord";
 
 @Injectable()
@@ -10,6 +11,7 @@ export class RankCommand {
     constructor(
         private readonly rankService: RankService,
         private readonly commandService: CommandService,
+        private readonly userService: UserService,
     ) {}
 
     @UseInterceptors(RankAutocompleteInterceptor)
@@ -25,20 +27,20 @@ export class RankCommand {
         if (!member) return;
         if (!(await this.commandService.ensureCanSend(interaction, member, rankChannel, "set ranks"))) return;
 
-        const previousRank = args.member.displayName.match(/^\[([^\]]+)]/)?.[1] ?? "Unknown";
+        const previousRank = this.userService.extractShortRank(args.member.displayName) ?? "Unknown";
         const newRank = this.rankService.toRankFromLabel(args.rank);
         if (!newRank) {
             return this.commandService.replyEphemeral(interaction, "Invalid rank. Please provide a valid rank.");
         }
         const formattedShortNewRank = this.rankService.formatShortRank(newRank);
-        const nameMatch = args.member.displayName.match(/^\[[^\]]+\]\s([a-zA-Z])\.\s(.+)$/);
-        if (!nameMatch) {
+        const parsedUser = this.userService.extractUserInfo(args.member.displayName);
+        if (!parsedUser) {
             return this.commandService.replyEphemeral(
                 interaction,
-                "Failed to parse player name from nickname. Expected format: [Rank] F. Lastname",
+                "Failed to parse player name from nickname. Expected format: [Rank] Pseudo",
             );
         }
-        const updatedName = `${nameMatch[1]}. ${nameMatch[2].trim()}`;
+        const updatedName = parsedUser.name;
         const updatedNickname = `[${formattedShortNewRank}] ${updatedName}`;
 
         try {
