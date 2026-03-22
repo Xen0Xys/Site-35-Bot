@@ -8,6 +8,8 @@ import {I18nService} from "../../helper/i18n.service";
 @Injectable()
 export class UserService {
     private readonly logger = new Logger(UserService.name);
+    private static readonly DISPLAY_NAME_REGEX = /^\[([^\]]+)]\s+(.+)$/;
+    private static readonly SHORT_RANK_REGEX = /^\[([^\]]+)]/;
 
     constructor(
         private readonly prismaService: PrismaService,
@@ -36,17 +38,18 @@ export class UserService {
     }
 
     extractUserInfo(displayName: string) {
-        // Expected nickname format: [Rank] F. Lastname
-        const usernameRegex = /^\[([^\]]+)]\s([a-zA-Z])\.\s(.+)$/;
-        const matches = displayName.match(usernameRegex);
+        const matches = displayName.match(UserService.DISPLAY_NAME_REGEX);
         if (!matches) return null;
         const rank = matches[1];
-        const firstName = matches[2];
-        const lastName = matches[3]?.trim();
-        if (!rank || !firstName || !lastName) return null;
+        const name = matches[2]?.trim();
+        if (!rank || !name) return null;
         const formattedRank = this.toRank(rank);
         if (!formattedRank) return null;
-        return {rank: formattedRank, name: `${firstName}. ${lastName}`};
+        return {rank: formattedRank, name};
+    }
+
+    extractShortRank(displayName: string): string | null {
+        return displayName.match(UserService.SHORT_RANK_REGEX)?.[1] ?? null;
     }
 
     toRank(rank: string): Ranks | null {

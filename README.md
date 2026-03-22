@@ -129,8 +129,9 @@ Affiche le statut du serveur dans le salon actuel.
 - Pour `/add-training` et `/remove-training`, vous devez pouvoir écrire dans le salon des formations.
 - Pour `/set-rank`, vous devez pouvoir écrire dans le salon des promotions/démotions.
 - Pour `display-status`, vous devez pouvoir gérer les messages dans le salon actuel.
-- Le bot attend un format de pseudo précis : `[Grade] F. Nom`.
+- Le bot attend un format de pseudo précis : `[Grade] F. Nom` ou `[Grade] Unité "Pseudo"`
     - Exemple : `[CPT] J. Dupont`
+    - Exemple : `[SPE] A1-1 "Shadow"`
     - Si le format n'est pas respecté, la commande `/set-rank` échoue.
 
 ## Ce que le bot fait automatiquement

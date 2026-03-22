@@ -5,12 +5,14 @@ import {RemoveTrainingDto} from "../models/dto/remove-training.dto";
 import {TrainingAutocompleteInterceptor} from "../interceptors/training-autocomplete.interceptor";
 import {TrainingService} from "../services/training.service";
 import {CommandService} from "../services/command.service";
+import {UserService} from "../services/user.service";
 
 @Injectable()
 export class TrainingCommands {
     constructor(
         private readonly trainingService: TrainingService,
         private readonly commandService: CommandService,
+        private readonly userService: UserService,
     ) {}
 
     @UseInterceptors(TrainingAutocompleteInterceptor)
@@ -39,7 +41,7 @@ export class TrainingCommands {
         try {
             await this.trainingService.addTraining(BigInt(args.member.id), training);
             await trainingChannel.send({
-                content: `**Site 35 | Registre d'attribution des formations**\n\n- Nom : <@${args.member.id}>\n- Grade : ${args.member.displayName.match(/^\[([^\]]+)]/)?.[1] ?? "Unknown"}\n- Formation complétée : ${args.trainingName}`,
+                content: `**Site 35 | Registre d'attribution des formations**\n\n- Nom : <@${args.member.id}>\n- Grade : ${this.userService.extractShortRank(args.member.displayName) ?? "Unknown"}\n- Formation complétée : ${args.trainingName}`,
                 allowedMentions: {
                     parse: [],
                     users: [args.member.id],
