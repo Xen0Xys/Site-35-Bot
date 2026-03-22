@@ -41,10 +41,10 @@ export class TrainingCommands {
         try {
             await this.trainingService.addTraining(BigInt(args.member.id), training);
             await trainingChannel.send({
-                content: `**Site 35 | Registre d'attribution des formations**\n\n- Nom : <@${args.member.id}>\n- Grade : ${this.userService.extractShortRank(args.member.displayName) ?? "Unknown"}\n- Formation complétée : ${args.trainingName}`,
+                content: `**Site 35 | Registre d'attribution des formations**\n\n- Nom : <@${args.member.id}>\n- Grade : ${this.userService.extractShortRank(args.member.displayName) ?? "Unknown"}\n- Formation complétée : ${args.trainingName}\n- Formateur : <@${interaction.user.id}>`,
                 allowedMentions: {
                     parse: [],
-                    users: [args.member.id],
+                    users: [...new Set([args.member.id, interaction.user.id])],
                 },
             });
             return this.commandService.replyEphemeral(
