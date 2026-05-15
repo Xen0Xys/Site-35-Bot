@@ -10,7 +10,6 @@ import {
     TextInputBuilder,
     TextInputStyle,
 } from "discord.js";
-import {CommandService} from "../services/command.service";
 import {DiscordService} from "../services/discord.service";
 
 const APPLY_MODAL_ID = "apply-modal";
@@ -18,13 +17,14 @@ const FIELD_RP_NAME = "rp-name";
 const FIELD_COUNTRY = "country";
 const FIELD_SOURCE = "source";
 const FIELD_VALIDATION = "validation";
+const RP_NAME_MAX_LENGTH = 64;
+const COUNTRY_MAX_LENGTH = 56;
+const SOURCE_MAX_LENGTH = 800;
+const VALIDATION_MAX_LENGTH = 16;
 
 @Injectable()
 export class ApplyCommand {
-    constructor(
-        private readonly commandService: CommandService,
-        private readonly discordService: DiscordService,
-    ) {}
+    constructor(private readonly discordService: DiscordService) {}
 
     @necord.SlashCommand({
         name: "apply",
@@ -55,6 +55,7 @@ export class ApplyCommand {
             label: "Prénom et Nom RP",
             placeholder: "Prénom et nom RP complet (Ex: Ethan Cole)",
             style: TextInputStyle.Short,
+            maxLength: RP_NAME_MAX_LENGTH,
             required: true,
         });
 
@@ -62,6 +63,7 @@ export class ApplyCommand {
             customId: FIELD_COUNTRY,
             label: "Pays",
             style: TextInputStyle.Short,
+            maxLength: COUNTRY_MAX_LENGTH,
             required: true,
         });
 
@@ -69,6 +71,7 @@ export class ApplyCommand {
             customId: FIELD_SOURCE,
             label: "Comment avez-vous connu le serveur ?",
             style: TextInputStyle.Short,
+            maxLength: SOURCE_MAX_LENGTH,
             required: true,
         });
 
@@ -76,6 +79,7 @@ export class ApplyCommand {
             customId: FIELD_VALIDATION,
             placeholder: "Merci d'écrire \"J'accepte\" pour confirmer les instructions ci-dessus",
             style: TextInputStyle.Short,
+            maxLength: VALIDATION_MAX_LENGTH,
             required: true,
         });
 
@@ -94,7 +98,7 @@ export class ApplyCommand {
         await interaction.showModal(
             new ModalBuilder({
                 customId: APPLY_MODAL_ID,
-                title: "Modal",
+                title: "Formulaire de candidature",
                 components: [infoRow, countryRow, sourceRow, validationInfo, validationLabel],
             }),
         );
@@ -119,7 +123,8 @@ export class ApplyCommand {
             });
         }
 
-        const channel = await interaction.guild.channels.fetch(applyChannelId);
+        const channel = await interaction.guild.channels.fetch(applyChannelId).catch(() => null);
+
         if (!channel || !channel.isTextBased() || channel.isDMBased()) {
             return interaction.reply({
                 content:

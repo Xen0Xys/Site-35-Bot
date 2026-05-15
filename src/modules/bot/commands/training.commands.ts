@@ -70,8 +70,7 @@ export class TrainingCommands {
         if (!trainingChannel) return;
         const member = await this.commandService.getMemberOrReply(interaction, BigInt(interaction.user.id));
         if (!member) return;
-        if (!(await this.commandService.ensureCanSend(interaction, member, trainingChannel, "remove trainings")))
-            return;
+        if (!(await this.commandService.ensureCanSend(interaction, member, trainingChannel, "remove trainings"))) return;
         const training = this.trainingService.toTrainingFromLabel(args.trainingName);
         if (!training) {
             return this.commandService.replyEphemeral(

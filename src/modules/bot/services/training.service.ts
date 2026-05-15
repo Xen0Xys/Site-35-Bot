@@ -126,9 +126,9 @@ export class TrainingService {
             targetBlocks.forEach((block) => {
                 const preview = sanitizePreview(block);
                 // Prefer explicit "Formation completee" lines when present.
-                const trainingLineMatches = Array.from(
-                    block.matchAll(/formation compl[eé]t[eé]e\s*[:-]?\s*(.+)/gi),
-                ).map((match) => match[1].trim());
+                const trainingLineMatches = Array.from(block.matchAll(/formation compl[eé]t[eé]e\s*[:-]?\s*(.+)/gi)).map(
+                    (match) => match[1].trim(),
+                );
 
                 const normalizedBlock = normalize(block);
                 const fallbackMatches = Array.from(normalizedBlock.matchAll(/formation completee\s+(.+)/gi)).map(
