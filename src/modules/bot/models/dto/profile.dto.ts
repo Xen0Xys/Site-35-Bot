@@ -9,5 +9,5 @@ export class ProfileDto {
         required: false,
     })
     @Type(() => Object)
-    member: GuildMember;
+    member?: GuildMember;
 }

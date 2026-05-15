@@ -51,7 +51,7 @@ export class TrainingCommands {
                 interaction,
                 `Formation "${args.trainingName}" ajoutée avec succès au profil de <@${args.member.id}>.`,
             );
-        } catch (e) {
+        } catch (e: any) {
             return this.commandService.replyEphemeral(interaction, `Failed to add training: ${e.message}`);
         }
     }
@@ -70,8 +70,7 @@ export class TrainingCommands {
         if (!trainingChannel) return;
         const member = await this.commandService.getMemberOrReply(interaction, BigInt(interaction.user.id));
         if (!member) return;
-        if (!(await this.commandService.ensureCanSend(interaction, member, trainingChannel, "remove trainings")))
-            return;
+        if (!(await this.commandService.ensureCanSend(interaction, member, trainingChannel, "remove trainings"))) return;
         const training = this.trainingService.toTrainingFromLabel(args.trainingName);
         if (!training) {
             return this.commandService.replyEphemeral(
@@ -85,7 +84,7 @@ export class TrainingCommands {
                 interaction,
                 `Formation "${args.trainingName}" retirée avec succès du profil de <@${args.member.id}>.`,
             );
-        } catch (e) {
+        } catch (e: any) {
             return this.commandService.replyEphemeral(interaction, `Failed to remove training: ${e.message}`);
         }
     }

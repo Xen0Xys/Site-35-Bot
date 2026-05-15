@@ -13,12 +13,9 @@ export class BotEmbedsService {
         guild: Guild,
         medals?: {medals: Medals[]; formattedMedals: string[]},
     ) {
-        const logoAttachment = new AttachmentBuilder(
-            path.resolve(process.cwd(), "assets", "scp_foundation_logo.webp"),
-            {
-                name: "scp_foundation_logo.webp",
-            },
-        );
+        const logoAttachment = new AttachmentBuilder(path.resolve(process.cwd(), "assets", "scp_foundation_logo.webp"), {
+            name: "scp_foundation_logo.webp",
+        });
         const trainingLabelsByType = new Map(
             user.trainings.map((training, index) => [training, user.formattedTrainings[index]]),
         );
@@ -123,12 +120,9 @@ export class BotEmbedsService {
     }
 
     getStatusEmbed(serverData: ServerDataEntity) {
-        const logoAttachment = new AttachmentBuilder(
-            path.resolve(process.cwd(), "assets", "scp_foundation_logo.webp"),
-            {
-                name: "scp_foundation_logo.webp",
-            },
-        );
+        const logoAttachment = new AttachmentBuilder(path.resolve(process.cwd(), "assets", "scp_foundation_logo.webp"), {
+            name: "scp_foundation_logo.webp",
+        });
 
         const isOnline = serverData.status === "online";
         const statusLabel = isOnline ? "En ligne" : "Hors ligne";

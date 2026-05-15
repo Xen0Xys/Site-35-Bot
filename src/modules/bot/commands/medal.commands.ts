@@ -53,7 +53,7 @@ export class MedalCommands {
                 interaction,
                 `Médaille "${args.medalName}" ajoutée avec succès au profil de <@${args.member.id}>.`,
             );
-        } catch (e) {
+        } catch (e: any) {
             return this.commandService.replyEphemeral(interaction, `Failed to add medal: ${e.message}`);
         }
     }
@@ -86,7 +86,7 @@ export class MedalCommands {
                 interaction,
                 `Médaille "${args.medalName}" retirée avec succès du profil de <@${args.member.id}>.`,
             );
-        } catch (e) {
+        } catch (e: any) {
             return this.commandService.replyEphemeral(interaction, `Failed to remove medal: ${e.message}`);
         }
     }

@@ -9,7 +9,7 @@ export class AddMedalDto {
         required: true,
     })
     @Type(() => Object)
-    member: GuildMember;
+    member!: GuildMember;
 
     @StringOption({
         name: "medaille",
@@ -17,12 +17,12 @@ export class AddMedalDto {
         autocomplete: true,
         required: true,
     })
-    medalName: string;
+    medalName!: string;
 
     @StringOption({
         name: "contexte",
         description: "Contexte de l'attribution de la médaille",
         required: true,
     })
-    contexte: string;
+    contexte!: string;
 }

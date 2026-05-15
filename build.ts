@@ -1,3 +1,4 @@
+// @ts-ignore
 Bun.build({
     entrypoints: ["./src/app.ts"],
     format: "esm",
