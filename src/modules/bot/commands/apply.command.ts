@@ -84,7 +84,7 @@ export class ApplyCommand {
         const sourceRow = new ActionRowBuilder<TextInputBuilder>().addComponents(sourceInput);
         const validationInfo = {
             type: ComponentType.TextDisplay,
-            content: `### Une fois votre candidature envoyée, il vous suffira d'attendre qu'elle soit traitée. Pour les questions directions <#${process.env.DISCORD_QUESTIONS_CHANNEL_ID ?? "1000000000000000000"}>`,
+            content: `### Une fois votre candidature envoyée, il vous suffira d'attendre qu'elle soit traitée. Pour les questions, directions <#${process.env.DISCORD_QUESTIONS_CHANNEL_ID ?? "1000000000000000000"}>`,
         };
 
         const validationLabel = new LabelBuilder({
@@ -131,7 +131,8 @@ export class ApplyCommand {
         const rpName = this.normalizeAlphaWords(interaction.fields.getTextInputValue(FIELD_RP_NAME), 2);
         if (!rpName) {
             return interaction.reply({
-                content: "Le champ Prénom / Nom RP doit contenir au moins deux parties composées uniquement de lettres et d'espaces.",
+                content:
+                    "Le champ Prénom / Nom RP doit contenir au moins deux parties composées uniquement de lettres et d'espaces.",
                 flags: MessageFlagsBitField.Flags.Ephemeral,
             });
         }
