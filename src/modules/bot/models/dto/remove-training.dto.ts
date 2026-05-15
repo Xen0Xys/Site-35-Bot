@@ -9,7 +9,7 @@ export class RemoveTrainingDto {
         required: true,
     })
     @Type(() => Object)
-    member: GuildMember;
+    member!: GuildMember;
 
     @StringOption({
         name: "formation",
@@ -17,5 +17,5 @@ export class RemoveTrainingDto {
         autocomplete: true,
         required: true,
     })
-    trainingName: string;
+    trainingName!: string;
 }

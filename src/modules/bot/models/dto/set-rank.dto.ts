@@ -9,7 +9,7 @@ export class SetRankDto {
         required: true,
     })
     @Type(() => Object)
-    member: GuildMember;
+    member!: GuildMember;
 
     @StringOption({
         name: "grade",
@@ -17,12 +17,12 @@ export class SetRankDto {
         autocomplete: true,
         required: true,
     })
-    rank: string;
+    rank!: string;
 
     @StringOption({
         name: "raison",
         description: "Raison du changement de grade",
         required: true,
     })
-    reason: string;
+    reason!: string;
 }

@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.3.0] - 2026-05-15
+
+### Added
+
+- Added `/apply` slash command with a multi-step application modal and submission flow to the dedicated apply channel.
+- Added validation for RP name and country fields, plus role-based access restrictions for higher-ranked members.
+
+### Changed
+
+- Application modal now includes a guidance text block and environment-based channel mention for questions.
+- Application RP name is normalized before submission to enforce consistent capitalization.
+
 ## [1.2.0] - 2026-03-22
 
 ### Added

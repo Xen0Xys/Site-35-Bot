@@ -252,7 +252,7 @@ export class TrainingService {
             if (requireExistingUser) {
                 const entry = missingEntries[0];
                 throw new NotFoundException(
-                    `User with id ${entry.userId.toString()} not found, cannot add training ${entry.training}.`,
+                    `User with id ${entry?.userId.toString()} not found, cannot add training ${entry?.training}.`,
                 );
             }
             missingEntries.forEach((entry) => {

@@ -51,7 +51,7 @@ export class TrainingCommands {
                 interaction,
                 `Formation "${args.trainingName}" ajoutée avec succès au profil de <@${args.member.id}>.`,
             );
-        } catch (e) {
+        } catch (e: any) {
             return this.commandService.replyEphemeral(interaction, `Failed to add training: ${e.message}`);
         }
     }
@@ -85,7 +85,7 @@ export class TrainingCommands {
                 interaction,
                 `Formation "${args.trainingName}" retirée avec succès du profil de <@${args.member.id}>.`,
             );
-        } catch (e) {
+        } catch (e: any) {
             return this.commandService.replyEphemeral(interaction, `Failed to remove training: ${e.message}`);
         }
     }

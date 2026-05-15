@@ -119,6 +119,20 @@ export class DiscordService {
         return medalChannel;
     }
 
+    async getApplyChannel(): Promise<GuildTextBasedChannel | null> {
+        const guild = await this.getGuild();
+        if (!guild) return null;
+        const applyChannelId = process.env.DISCORD_APPLY_CHANNEL_ID;
+        if (!applyChannelId) {
+            this.logger.error("DISCORD_APPLY_CHANNEL_ID is not defined.");
+            return null;
+        }
+        const applyChannel = guild.channels.cache.get(applyChannelId);
+        if (!applyChannel || !applyChannel.isTextBased()) return null;
+        if (applyChannel.type === ChannelType.GuildAnnouncement) return null;
+        return applyChannel;
+    }
+
     async getMedalMessages(): Promise<string[]> {
         const guild = await this.getGuild();
         if (!guild) return [];

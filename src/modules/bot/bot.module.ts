@@ -14,6 +14,7 @@ import {StatusService} from "./services/status.service";
 import {StatusCron} from "./crons/status.cron";
 import {StatusCommands} from "./commands/status.commands";
 import {MedalCommands} from "./commands/medal.commands";
+import {ApplyCommand} from "./commands/apply.command";
 
 @Module({
     providers: [
@@ -29,6 +30,7 @@ import {MedalCommands} from "./commands/medal.commands";
         // Commands
         ProfileCommand,
         MedalCommands,
+        ApplyCommand,
         RankCommand,
         StatusCommands,
         TrainingCommands,

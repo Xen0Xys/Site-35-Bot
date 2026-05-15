@@ -9,7 +9,7 @@ export class RemoveMedalDto {
         required: true,
     })
     @Type(() => Object)
-    member: GuildMember;
+    member!: GuildMember;
 
     @StringOption({
         name: "medaille",
@@ -17,5 +17,5 @@ export class RemoveMedalDto {
         autocomplete: true,
         required: true,
     })
-    medalName: string;
+    medalName!: string;
 }

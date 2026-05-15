@@ -69,7 +69,7 @@ export class RankCommand {
                     `Failed to update nickname for <@${args.member.id}>. However, the rank change has been recorded and posted in the register.`,
                 );
             }
-        } catch (e) {
+        } catch (e: any) {
             return this.commandService.replyEphemeral(interaction, `Failed to set rank: ${e.message}`);
         }
     }
